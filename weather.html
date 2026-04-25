@@ -76,6 +76,23 @@
         cursor: not-allowed;
       }
 
+      input[type="text"] {
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        padding: 0.6rem 0.75rem;
+        font-size: 0.95rem;
+        min-width: 280px;
+        color: var(--text);
+        background: #fff;
+      }
+
+      .search-form {
+        display: flex;
+        gap: 0.55rem;
+        flex-wrap: wrap;
+        align-items: center;
+      }
+
       .status {
         margin-top: 0.8rem;
         color: var(--muted);
@@ -107,6 +124,74 @@
         font-weight: 600;
       }
 
+      .date-main {
+        font-weight: 600;
+      }
+
+      .date-sub {
+        margin-top: 0.15rem;
+        font-size: 0.75rem;
+        color: var(--muted);
+      }
+
+      .badge {
+        display: inline-block;
+        border-radius: 999px;
+        padding: 0.15rem 0.5rem;
+        font-size: 0.78rem;
+        font-weight: 600;
+        letter-spacing: 0.01em;
+      }
+
+      .temp-normal {
+        background: #edf5ff;
+        color: #0d4d9f;
+      }
+
+      .temp-alert {
+        background: #fff1dc;
+        color: #8f4c00;
+      }
+
+      .wind-normal {
+        background: #edf8f3;
+        color: #18633f;
+      }
+
+      .wind-mid {
+        background: #fff6e8;
+        color: #8a5a00;
+      }
+
+      .wind-alert {
+        background: #ffe9ea;
+        color: #8c1f27;
+      }
+
+      .condition-good {
+        color: #1e7a45;
+        font-weight: 600;
+      }
+
+      .gust-alert {
+        background: #ffe1e5;
+        color: #7c1220;
+      }
+
+      .condition-rain {
+        color: #8a5a00;
+        font-weight: 600;
+      }
+
+      .legend {
+        margin-top: 0.75rem;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.45rem;
+        color: var(--muted);
+        font-size: 0.8rem;
+      }
+
       .empty {
         margin-top: 1rem;
         padding: 1rem;
@@ -121,9 +206,7 @@
 
     <script type="module">
       import { h, render } from "https://esm.sh/preact@10.26.6";
-      import { useMemo, useState } from "https://esm.sh/preact@10.26.6/hooks";
-
-      const USER_AGENT = "WeatherTableDemo/1.0 (https://example.com)";
+      import { useEffect, useMemo, useState } from "https://esm.sh/preact@10.26.6/hooks";
 
       const symbolMap = {
         clearsky: "Clear",
@@ -164,8 +247,54 @@
         });
       }
 
+      function getRelativeDayLabel(dateStr) {
+        const now = new Date();
+        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        const dayDate = new Date(dateStr + "T00:00:00");
+        const target = new Date(dayDate.getFullYear(), dayDate.getMonth(), dayDate.getDate());
+        const msPerDay = 24 * 60 * 60 * 1000;
+        const diffDays = Math.round((target.getTime() - today.getTime()) / msPerDay);
+
+        if (diffDays === 0) return "Today";
+        if (diffDays === 1) return "Tomorrow";
+        if (diffDays === -1) return "Yesterday";
+        if (diffDays > 1 && diffDays < 7) {
+          return target.toLocaleDateString(undefined, { weekday: "long" });
+        }
+        return "";
+      }
+
       function getDateKey(isoTimestamp) {
         return new Date(isoTimestamp).toISOString().split("T")[0];
+      }
+
+      function readStateFromUrl() {
+        const params = new URLSearchParams(window.location.search);
+        const q = (params.get("q") || "").trim();
+        const lat = Number(params.get("lat"));
+        const lng = Number(params.get("lng"));
+        return {
+          q,
+          coords: Number.isFinite(lat) && Number.isFinite(lng) ? { lat, lng } : null,
+        };
+      }
+
+      function writeCoordsToUrl(lat, lng) {
+        const params = new URLSearchParams(window.location.search);
+        params.delete("q");
+        params.set("lat", String(lat));
+        params.set("lng", String(lng));
+        const next = `${window.location.pathname}?${params.toString()}${window.location.hash}`;
+        window.history.replaceState({}, "", next);
+      }
+
+      function writeQueryToUrl(query) {
+        const params = new URLSearchParams(window.location.search);
+        params.delete("lat");
+        params.delete("lng");
+        params.set("q", query);
+        const next = `${window.location.pathname}?${params.toString()}${window.location.hash}`;
+        window.history.replaceState({}, "", next);
       }
 
       function summarizeForecast(forecast) {
@@ -256,13 +385,32 @@
         return summaries;
       }
 
+      function getTempDiffClass(tempDiff) {
+        const numeric = Number(String(tempDiff || "").replace("+", ""));
+        return Number.isFinite(numeric) && Math.abs(numeric) >= 5 ? "temp-alert" : "temp-normal";
+      }
+
+      function getWindClass(maxWindSpeed) {
+        if (maxWindSpeed < 5) return "wind-normal";
+        if (maxWindSpeed > 8) return "wind-alert";
+        return "wind-mid";
+      }
+
+      function getGustClass(maxWindGust) {
+        if (typeof maxWindGust !== "number") return "wind-normal";
+        if (maxWindGust < 8) return "wind-normal";
+        if (maxWindGust > 15) return "gust-alert";
+        return "wind-mid";
+      }
+
+      function getConditionClass(condition) {
+        if (condition.toLowerCase().includes("rain")) return "condition-rain";
+        return condition === "Clear" || condition === "Fair" ? "condition-good" : "";
+      }
+
       async function fetchForecast(lat, lon) {
         const url = `https://api.met.no/weatherapi/locationforecast/2.0/complete?lat=${encodeURIComponent(lat)}&lon=${encodeURIComponent(lon)}`;
-        const response = await fetch(url, {
-          headers: {
-            "User-Agent": USER_AGENT,
-          },
-        });
+        const response = await fetch(url);
 
         if (!response.ok) {
           throw new Error(`Forecast request failed: ${response.status} ${response.statusText}`);
@@ -271,13 +419,89 @@
         return response.json();
       }
 
+      async function geocodeLocation(query) {
+        const url = `https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&q=${encodeURIComponent(query)}`;
+        const response = await fetch(url, {
+          headers: {
+            Accept: "application/json",
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error(`Location search failed: ${response.status} ${response.statusText}`);
+        }
+
+        const results = await response.json();
+        if (!Array.isArray(results) || results.length === 0) {
+          throw new Error("No matching location found.");
+        }
+
+        const first = results[0];
+        return {
+          lat: Number(first.lat),
+          lng: Number(first.lon),
+          label: first.display_name || query,
+        };
+      }
+
       function App() {
-        const [status, setStatus] = useState("Click \"Use my location\" to load weather.");
+        const [status, setStatus] = useState("Search for a place or click \"Use my location\".");
         const [forecast, setForecast] = useState(null);
         const [locationLabel, setLocationLabel] = useState("");
+        const [searchQuery, setSearchQuery] = useState("");
         const [isLoading, setIsLoading] = useState(false);
 
         const dailyRows = useMemo(() => summarizeForecast(forecast), [forecast]);
+
+        async function loadForecastFor(lat, lng, label, urlMode = "coords") {
+          setStatus("Loading forecast...");
+          try {
+            const data = await fetchForecast(lat, lng);
+            setForecast(data);
+            setLocationLabel(label || `${lat.toFixed(4)}, ${lng.toFixed(4)}`);
+            if (urlMode === "coords") {
+              writeCoordsToUrl(lat, lng);
+            }
+            setStatus("Forecast loaded.");
+          } catch (error) {
+            setForecast(null);
+            setStatus(error instanceof Error ? error.message : "Failed to load forecast.");
+          } finally {
+            setIsLoading(false);
+          }
+        }
+
+        useEffect(() => {
+          async function loadFromUrlState() {
+            const state = readStateFromUrl();
+            if (state.q) {
+              setSearchQuery(state.q);
+              setIsLoading(true);
+              setStatus("Searching location...");
+              try {
+                const place = await geocodeLocation(state.q);
+                await loadForecastFor(place.lat, place.lng, place.label, "query");
+                writeQueryToUrl(state.q);
+              } catch (error) {
+                setForecast(null);
+                setStatus(error instanceof Error ? error.message : "Failed to search location.");
+                setIsLoading(false);
+              }
+              return;
+            }
+
+            if (state.coords) {
+              setIsLoading(true);
+              await loadForecastFor(
+                state.coords.lat,
+                state.coords.lng,
+                `${state.coords.lat.toFixed(4)}, ${state.coords.lng.toFixed(4)}`
+              );
+            }
+          }
+
+          void loadFromUrlState();
+        }, []);
 
         async function requestLocationAndLoad() {
           if (!navigator.geolocation) {
@@ -291,19 +515,7 @@
           navigator.geolocation.getCurrentPosition(
             async (position) => {
               const { latitude, longitude } = position.coords;
-              setLocationLabel(`${latitude.toFixed(4)}, ${longitude.toFixed(4)}`);
-              setStatus("Loading forecast...");
-
-              try {
-                const data = await fetchForecast(latitude, longitude);
-                setForecast(data);
-                setStatus("Forecast loaded.");
-              } catch (error) {
-                setForecast(null);
-                setStatus(error instanceof Error ? error.message : "Failed to load forecast.");
-              } finally {
-                setIsLoading(false);
-              }
+              await loadForecastFor(latitude, longitude, `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`);
             },
             (error) => {
               const message =
@@ -320,12 +532,33 @@
           );
         }
 
+        async function searchLocationAndLoad(event) {
+          event.preventDefault();
+          const query = searchQuery.trim();
+          if (!query) {
+            setStatus("Enter a location to search.");
+            return;
+          }
+
+          setIsLoading(true);
+          setStatus("Searching location...");
+          try {
+            const place = await geocodeLocation(query);
+            await loadForecastFor(place.lat, place.lng, place.label, "query");
+            writeQueryToUrl(query);
+          } catch (error) {
+            setForecast(null);
+            setStatus(error instanceof Error ? error.message : "Failed to search location.");
+            setIsLoading(false);
+          }
+        }
+
         return h("div", { class: "container" }, [
           h("h1", null, "Local Weather Forecast"),
           h(
             "p",
             { class: "subtitle" },
-            "This app does not assume your location. Use the button to grant location access and load weather."
+            "This app does not assume your location. Search for a place or use geolocation."
           ),
           h("div", { class: "controls" }, [
             h(
@@ -333,7 +566,26 @@
               { onClick: requestLocationAndLoad, disabled: isLoading },
               isLoading ? "Loading..." : "Use my location"
             ),
-            locationLabel ? h("span", null, `Coordinates: ${locationLabel}`) : null,
+            h(
+              "form",
+              { class: "search-form", onSubmit: searchLocationAndLoad },
+              [
+                h("input", {
+                  type: "text",
+                  value: searchQuery,
+                  onInput: (event) => setSearchQuery(event.currentTarget.value),
+                  placeholder: "Search city, region, country...",
+                  "aria-label": "Search location",
+                  disabled: isLoading,
+                }),
+                h(
+                  "button",
+                  { type: "submit", disabled: isLoading },
+                  isLoading ? "Loading..." : "Search"
+                ),
+              ]
+            ),
+            locationLabel ? h("span", null, `Location: ${locationLabel}`) : null,
           ]),
           h("div", { class: "status" }, status),
           dailyRows.length
@@ -356,22 +608,58 @@
                     null,
                     dailyRows.map((day) => {
                       const allConditions = Array.from(day.conditions);
+                      const relativeLabel = getRelativeDayLabel(day.date);
+                      const tempClass = getTempDiffClass(day.tempDiff);
+                      const windClass = getWindClass(day.maxWindSpeed);
+                      const gustClass = getGustClass(day.maxWindGust);
                       return h("tr", { key: day.date }, [
-                        h("td", null, formatDay(day.date)),
+                        h("td", null, [
+                          h("div", { class: "date-main" }, formatDay(day.date)),
+                          relativeLabel ? h("div", { class: "date-sub" }, relativeLabel) : null,
+                        ]),
                         h("td", null, `${Math.round(day.highTemp)}° / ${Math.round(day.lowTemp)}°`),
-                        h("td", null, day.tempDiff || "-"),
+                        h(
+                          "td",
+                          null,
+                          day.tempDiff
+                            ? h("span", { class: `badge ${tempClass}` }, day.tempDiff)
+                            : "-"
+                        ),
                         h("td", null, day.totalPrecipitation || "-"),
-                        h("td", null, day.maxWindSpeed),
-                        h("td", null, day.maxWindGust ?? "-"),
+                        h("td", null, h("span", { class: `badge ${windClass}` }, day.maxWindSpeed)),
+                        h(
+                          "td",
+                          null,
+                          day.maxWindGust != null
+                            ? h("span", { class: `badge ${gustClass}` }, day.maxWindGust)
+                            : "-"
+                        ),
                         h(
                           "td",
                           null,
                           `${day.dominantCondition}${allConditions.some(hasThunder) ? " ⚡" : ""}`
                         ),
-                        h("td", null, allConditions.join(", ") || "-"),
+                        h(
+                          "td",
+                          null,
+                          allConditions.length
+                            ? allConditions.map((condition, index) =>
+                                h("span", { class: getConditionClass(condition) || null }, [
+                                  condition,
+                                  index < allConditions.length - 1 ? ", " : "",
+                                ])
+                              )
+                            : "-"
+                        ),
                       ]);
                     })
                   ),
+                ]),
+                h("div", { class: "legend" }, [
+                  h("span", null, "Temp diff alert: ±5°C or more"),
+                  h("span", null, "Max wind green: < 5 m/s"),
+                  h("span", null, "Max gust green: < 8 m/s"),
+                  h("span", null, "Wind/gust alert: > 8 / > 15 m/s"),
                 ]),
               ])
             : h(
