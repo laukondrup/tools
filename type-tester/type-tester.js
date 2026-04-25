@@ -126,6 +126,13 @@ function computeMetrics(correctChars, typoCount, fingerMistakes, elapsedMs) {
 }
 
 function App() {
+  const isPreview = useMemo(() => {
+    if (typeof window === 'undefined') {
+      return false;
+    }
+    return new URLSearchParams(window.location.search).get('preview') === '1';
+  }, []);
+
   const [quotes, setQuotes] = useState([]);
   const [dataStatus, setDataStatus] = useState('loading');
   const [errorMessage, setErrorMessage] = useState('');
@@ -191,7 +198,9 @@ function App() {
       return;
     }
 
-    setPassage(buildPassage(sourceQuotes));
+    const firstQuote = sourceQuotes[0];
+    const previewPassage = firstQuote ? formatQuote(firstQuote) : '';
+    setPassage(isPreview ? previewPassage : buildPassage(sourceQuotes));
     setPhase('racing');
     setIndex(0);
     setTypoCount(0);

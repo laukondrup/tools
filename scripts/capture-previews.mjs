@@ -102,7 +102,8 @@ async function main() {
   try {
     for (const toolDir of toolDirs) {
       const page = await context.newPage();
-      const url = `http://127.0.0.1:4173/${toolDir}/`;
+      const previewQuery = '?preview=1';
+      const url = `http://127.0.0.1:4173/${toolDir}/${previewQuery}`;
       const outputPath = path.join(rootDir, toolDir, 'preview.png');
 
       await page.goto(url, { waitUntil: 'networkidle' });
