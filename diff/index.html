@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Diff Forge</title>
+    <title>Diff</title>
     <meta name="theme-color" content="#111217" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -38,16 +38,8 @@
         color: var(--text);
         font-family: 'JetBrains Mono', 'IBM Plex Mono', monospace;
         background:
-          radial-gradient(circle at 12% 4%, rgba(90, 200, 250, 0.17) 0%, transparent 34%),
-          radial-gradient(circle at 86% 94%, rgba(249, 200, 90, 0.12) 0%, transparent 31%),
-          repeating-linear-gradient(
-            -22deg,
-            rgba(255, 255, 255, 0.012) 0,
-            rgba(255, 255, 255, 0.012) 1px,
-            transparent 1px,
-            transparent 13px
-          ),
-          var(--bg);
+          radial-gradient(circle at 12% 4%, rgba(90, 200, 250, 0.14) 0%, transparent 34%),
+          radial-gradient(circle at 86% 94%, rgba(249, 200, 90, 0.1) 0%, transparent 31%), var(--bg);
       }
 
       .shell {
@@ -99,6 +91,16 @@
         align-items: center;
         position: relative;
         z-index: 1;
+      }
+
+      .title-editable {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+      }
+
+      .title-editable h1 {
+        display: inline;
       }
 
       .editable-content {
@@ -1425,9 +1427,9 @@
           h('header', { class: 'hero', key: 'hero' }, [
             h('div', { class: 'title-row' }, [
               h(EditableText, {
-                value: title || 'Diff Forge',
+                value: title || 'Diff',
                 onSave: setTitle,
-                fallbackValue: 'Diff Forge',
+                fallbackValue: 'Diff',
                 className: 'title-editable',
                 editButtonTitle: 'Edit title',
                 element: 'h1',
