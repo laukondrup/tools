@@ -245,7 +245,7 @@
 
     <script type="module">
       import { h, render } from "https://esm.sh/preact@10.26.4";
-      import { useMemo, useState } from "https://esm.sh/preact@10.26.4/hooks";
+      import { useEffect, useMemo, useState } from "https://esm.sh/preact@10.26.4/hooks";
 
       const EVENTS = [
         { key: "5k", label: "5K", km: 5 },
@@ -257,10 +257,44 @@
       const DELTAS = [-15, -10, -5, 0, 5, 10, 15];
       const KM_TO_MILE = 0.621371;
 
-      function clampInt(value, fallback, min, max) {
+      function parseIntOr(value, fallback) {
         const parsed = Number.parseInt(String(value), 10);
         if (Number.isNaN(parsed)) return fallback;
-        return Math.min(max, Math.max(min, parsed));
+        return parsed;
+      }
+
+      function normalizePace(minValue, secValue) {
+        let min = parseIntOr(minValue, 0);
+        let sec = parseIntOr(secValue, 0);
+
+        if (sec < 0) {
+          const borrowMinutes = Math.ceil(Math.abs(sec) / 60);
+          min -= borrowMinutes;
+          sec += borrowMinutes * 60;
+        } else if (sec >= 60) {
+          min += Math.floor(sec / 60);
+          sec %= 60;
+        }
+
+        if (min < 0) {
+          min = 0;
+          sec = 0;
+        }
+
+        min = Math.min(min, 99);
+        return { min, sec };
+      }
+
+      function readStateFromUrl() {
+        const params = new URLSearchParams(window.location.search);
+        const unitParam = params.get("unit");
+        const splitsParam = params.get("splits");
+        const pace = normalizePace(params.get("min") ?? 5, params.get("sec") ?? 40);
+        return {
+          pace,
+          unit: unitParam === "mi" ? "mi" : "km",
+          showSplits: splitsParam === "1",
+        };
       }
 
       function formatPace(secondsPerUnit) {
@@ -286,14 +320,12 @@
       }
 
       function App() {
-        const [min, setMin] = useState(5);
-        const [sec, setSec] = useState(40);
-        const [unit, setUnit] = useState("km");
-        const [showSplits, setShowSplits] = useState(false);
+        const initialState = useMemo(() => readStateFromUrl(), []);
+        const [pace, setPace] = useState(initialState.pace);
+        const [unit, setUnit] = useState(initialState.unit);
+        const [showSplits, setShowSplits] = useState(initialState.showSplits);
 
-        const normalizedMin = clampInt(min, 5, 0, 59);
-        const normalizedSec = clampInt(sec, 40, 0, 59);
-        const basePace = normalizedMin * 60 + normalizedSec;
+        const basePace = pace.min * 60 + pace.sec;
 
         const paceColumns = useMemo(() => {
           return DELTAS.map((delta) => {
@@ -315,6 +347,15 @@
             };
           });
         }, [paceColumns, unit]);
+
+        useEffect(() => {
+          const url = new URL(window.location.href);
+          url.searchParams.set("min", String(pace.min));
+          url.searchParams.set("sec", String(pace.sec));
+          url.searchParams.set("unit", unit);
+          url.searchParams.set("splits", showSplits ? "1" : "0");
+          window.history.replaceState(null, "", url.toString());
+        }, [pace.min, pace.sec, unit, showSplits]);
 
         function splitRowsFor(rangeStartKm, rangeEndKm) {
           const start = Math.floor(rangeStartKm) + 1;
@@ -351,9 +392,10 @@
                   type: "number",
                   inputMode: "numeric",
                   min: "0",
-                  max: "59",
-                  value: normalizedMin,
-                  onInput: (e) => setMin(e.currentTarget.value),
+                  max: "99",
+                  value: pace.min,
+                  onInput: (e) =>
+                    setPace((current) => normalizePace(e.currentTarget.value, current.sec)),
                 }),
               ]),
               h("div", { class: "group" }, [
@@ -362,10 +404,9 @@
                   id: "sec",
                   type: "number",
                   inputMode: "numeric",
-                  min: "0",
-                  max: "59",
-                  value: normalizedSec,
-                  onInput: (e) => setSec(e.currentTarget.value),
+                  value: pace.sec,
+                  onInput: (e) =>
+                    setPace((current) => normalizePace(current.min, e.currentTarget.value)),
                 }),
               ]),
               h("div", { class: "group" }, [
@@ -375,7 +416,19 @@
                   {
                     id: "unit",
                     value: unit,
-                    onChange: (e) => setUnit(e.currentTarget.value),
+                    onChange: (e) => {
+                      const nextUnit = e.currentTarget.value;
+                      if (nextUnit === unit) return;
+
+                      const currentSecPerUnit = pace.min * 60 + pace.sec;
+                      const convertedSecPerUnit =
+                        unit === "km" && nextUnit === "mi"
+                          ? currentSecPerUnit / KM_TO_MILE
+                          : currentSecPerUnit * KM_TO_MILE;
+
+                      setPace(normalizePace(0, Math.round(convertedSecPerUnit)));
+                      setUnit(nextUnit);
+                    },
                   },
                   [
                     h("option", { value: "km" }, "per kilometer"),
