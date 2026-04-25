@@ -1,7 +1,7 @@
 const { h, render } = preact;
 const { useEffect, useMemo, useState } = preactHooks;
 const html = htm.bind(h);
-const FOCUS_LETTERS = ["T", "G", "B", "Y", "H", "N"];
+const FOCUS_LETTERS = ['T', 'G', 'B', 'Y', 'H', 'N'];
 const FOCUS_SET = new Set(FOCUS_LETTERS.map((letter) => letter.toLowerCase()));
 
 function randomInt(max) {
@@ -18,12 +18,12 @@ function shuffle(values) {
 }
 
 function sanitizeEntry(entry) {
-  if (!entry || typeof entry !== "object") {
+  if (!entry || typeof entry !== 'object') {
     return null;
   }
-  const normalizeDashes = (text) => text.replace(/[\u2012\u2013\u2014\u2015]/g, "-");
-  const q = typeof entry.q === "string" ? normalizeDashes(entry.q).trim() : "";
-  const a = typeof entry.a === "string" ? normalizeDashes(entry.a).trim() : "";
+  const normalizeDashes = (text) => text.replace(/[\u2012\u2013\u2014\u2015]/g, '-');
+  const q = typeof entry.q === 'string' ? normalizeDashes(entry.q).trim() : '';
+  const a = typeof entry.a === 'string' ? normalizeDashes(entry.a).trim() : '';
   if (!q || !a) {
     return null;
   }
@@ -31,7 +31,7 @@ function sanitizeEntry(entry) {
 }
 
 function focusDensity(text) {
-  const letters = (text || "").toLowerCase().replace(/[^a-z]/g, "");
+  const letters = (text || '').toLowerCase().replace(/[^a-z]/g, '');
   if (!letters.length) {
     return 0;
   }
@@ -66,7 +66,11 @@ function trimPassage(text, maxChars = 520) {
     return text;
   }
   const slice = text.slice(0, maxChars);
-  const punctuationCut = Math.max(slice.lastIndexOf(". "), slice.lastIndexOf("? "), slice.lastIndexOf("! "));
+  const punctuationCut = Math.max(
+    slice.lastIndexOf('. '),
+    slice.lastIndexOf('? '),
+    slice.lastIndexOf('! '),
+  );
   if (punctuationCut > 260) {
     return slice.slice(0, punctuationCut + 1);
   }
@@ -102,7 +106,7 @@ function buildPassage(quotes) {
     selected.push(extra);
   }
 
-  const passage = trimPassage(selected.map(formatQuote).join(" "));
+  const passage = trimPassage(selected.map(formatQuote).join(' '));
   return passage;
 }
 
@@ -110,12 +114,12 @@ function formatDuration(ms) {
   const seconds = Math.floor(ms / 1000);
   const minutes = Math.floor(seconds / 60);
   const remainder = seconds % 60;
-  return `${minutes}:${String(remainder).padStart(2, "0")}`;
+  return `${minutes}:${String(remainder).padStart(2, '0')}`;
 }
 
 function computeMetrics(correctChars, typoCount, fingerMistakes, elapsedMs) {
   const minutes = Math.max(elapsedMs / 60000, 1 / 60000);
-  const wpm = Math.round((correctChars / 5) / minutes);
+  const wpm = Math.round(correctChars / 5 / minutes);
   const totalKeystrokes = Math.max(1, correctChars + typoCount);
   const accuracy = Math.round((correctChars / totalKeystrokes) * 100);
   return { wpm, accuracy, fingerMistakes };
@@ -123,11 +127,11 @@ function computeMetrics(correctChars, typoCount, fingerMistakes, elapsedMs) {
 
 function App() {
   const [quotes, setQuotes] = useState([]);
-  const [dataStatus, setDataStatus] = useState("loading");
-  const [errorMessage, setErrorMessage] = useState("");
+  const [dataStatus, setDataStatus] = useState('loading');
+  const [errorMessage, setErrorMessage] = useState('');
 
-  const [phase, setPhase] = useState("idle");
-  const [passage, setPassage] = useState("");
+  const [phase, setPhase] = useState('idle');
+  const [passage, setPassage] = useState('');
   const [index, setIndex] = useState(0);
   const [typoCount, setTypoCount] = useState(0);
   const [fingerMistakes, setFingerMistakes] = useState(0);
@@ -140,7 +144,7 @@ function App() {
     if (!startedAt) {
       return 0;
     }
-    const end = phase === "finished" ? endedAt : nowTick;
+    const end = phase === 'finished' ? endedAt : nowTick;
     return Math.max(0, end - startedAt);
   }, [startedAt, endedAt, nowTick, phase]);
 
@@ -149,15 +153,17 @@ function App() {
     [index, typoCount, fingerMistakes, elapsedMs],
   );
 
-async function loadQuotes() {
-    setDataStatus("loading");
-    setErrorMessage("");
+  async function loadQuotes() {
+    setDataStatus('loading');
+    setErrorMessage('');
     try {
-      const globalQuotes = Array.isArray(window.TYPE_TESTER_QUOTES) ? window.TYPE_TESTER_QUOTES : null;
+      const globalQuotes = Array.isArray(window.TYPE_TESTER_QUOTES)
+        ? window.TYPE_TESTER_QUOTES
+        : null;
 
       let payload = globalQuotes;
       if (!payload) {
-        const response = await fetch("./quotes.json", { cache: "no-store" });
+        const response = await fetch('./quotes.json', { cache: 'no-store' });
         if (!response.ok) {
           throw new Error(`Failed to load quotes.json (${response.status})`);
         }
@@ -165,18 +171,18 @@ async function loadQuotes() {
       }
 
       if (!Array.isArray(payload)) {
-        throw new Error("Quote source must be a JSON array");
+        throw new Error('Quote source must be a JSON array');
       }
       const cleaned = payload.map(sanitizeEntry).filter(Boolean);
       if (!cleaned.length) {
-        throw new Error("Quote source does not contain usable quote entries");
+        throw new Error('Quote source does not contain usable quote entries');
       }
       setQuotes(cleaned);
-      setDataStatus("ready");
+      setDataStatus('ready');
       startRound(cleaned);
     } catch (error) {
-      setDataStatus("error");
-      setErrorMessage(error instanceof Error ? error.message : "Could not load quotes");
+      setDataStatus('error');
+      setErrorMessage(error instanceof Error ? error.message : 'Could not load quotes');
     }
   }
 
@@ -186,7 +192,7 @@ async function loadQuotes() {
     }
 
     setPassage(buildPassage(sourceQuotes));
-    setPhase("racing");
+    setPhase('racing');
     setIndex(0);
     setTypoCount(0);
     setFingerMistakes(0);
@@ -196,7 +202,7 @@ async function loadQuotes() {
   }
 
   function noteFingerMistake() {
-    if (phase !== "racing") {
+    if (phase !== 'racing') {
       return;
     }
     setFingerMistakes((value) => value + 1);
@@ -207,7 +213,7 @@ async function loadQuotes() {
   }, []);
 
   useEffect(() => {
-    if (phase !== "racing") {
+    if (phase !== 'racing') {
       return undefined;
     }
     const timer = window.setInterval(() => {
@@ -218,19 +224,19 @@ async function loadQuotes() {
 
   useEffect(() => {
     function onKeyDown(event) {
-      if (event.key === "F2") {
+      if (event.key === 'F2') {
         event.preventDefault();
         noteFingerMistake();
         return;
       }
 
-      if (phase === "finished" && event.key === "Enter") {
+      if (phase === 'finished' && event.key === 'Enter') {
         event.preventDefault();
         startRound();
         return;
       }
 
-      if (phase !== "racing") {
+      if (phase !== 'racing') {
         return;
       }
 
@@ -240,7 +246,7 @@ async function loadQuotes() {
 
       event.preventDefault();
       const now = Date.now();
-      const expected = passage[index] || "";
+      const expected = passage[index] || '';
 
       if (!startedAt) {
         setStartedAt(now);
@@ -254,18 +260,20 @@ async function loadQuotes() {
           const finalMetrics = computeMetrics(nextIndex, typoCount, fingerMistakes, elapsed);
           setIndex(nextIndex);
           setEndedAt(finishedAt);
-          setPhase("finished");
-          setHistory((records) => [
-            {
-              at: new Date(finishedAt).toISOString(),
-              elapsed,
-              wpm: finalMetrics.wpm,
-              accuracy: finalMetrics.accuracy,
-              typoCount,
-              fingerMistakes,
-            },
-            ...records,
-          ].slice(0, 8));
+          setPhase('finished');
+          setHistory((records) =>
+            [
+              {
+                at: new Date(finishedAt).toISOString(),
+                elapsed,
+                wpm: finalMetrics.wpm,
+                accuracy: finalMetrics.accuracy,
+                typoCount,
+                fingerMistakes,
+              },
+              ...records,
+            ].slice(0, 8),
+          );
           return;
         }
         setIndex(nextIndex);
@@ -275,15 +283,15 @@ async function loadQuotes() {
       setTypoCount((value) => value + 1);
     }
 
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
   }, [phase, passage, index, startedAt, typoCount, fingerMistakes, quotes]);
 
   const chars = useMemo(
     () =>
       [...passage].map((char, position) => {
         const className =
-          position < index ? "char correct" : position === index ? "char current" : "char pending";
+          position < index ? 'char correct' : position === index ? 'char current' : 'char pending';
         return html`<span key=${position} class=${className}>${char}</span>`;
       }),
     [passage, index],
@@ -297,7 +305,9 @@ async function loadQuotes() {
           Type-racer flow with extra tracking for finger-form mistakes. Source: local quote dataset.
         </div>
         <div class="focus-letters">
-          ${FOCUS_LETTERS.map((letter) => html`<span class="focus-pill" key=${letter}>${letter}</span>`)}
+          ${FOCUS_LETTERS.map(
+            (letter) => html`<span class="focus-pill" key=${letter}>${letter}</span>`,
+          )}
         </div>
       </header>
 
@@ -331,48 +341,39 @@ async function loadQuotes() {
 
         <section class="panel typing-area">
           <div class="passage">
-            ${dataStatus === "error"
+            ${dataStatus === 'error'
               ? html`<span class="error">${errorMessage}</span>`
               : passage
                 ? chars
-                : "Loading practice passage..."}
+                : 'Loading practice passage...'}
           </div>
 
           <div class="controls">
-            <button
-              type="button"
-              onClick=${() => startRound()}
-              disabled=${dataStatus !== "ready"}
-            >
-              ${phase === "finished" ? "Next Passage" : "New Passage"}
+            <button type="button" onClick=${() => startRound()} disabled=${dataStatus !== 'ready'}>
+              ${phase === 'finished' ? 'Next Passage' : 'New Passage'}
             </button>
             <button
               type="button"
               class="warn"
               onClick=${noteFingerMistake}
-              disabled=${phase !== "racing"}
+              disabled=${phase !== 'racing'}
               title="Shortcut: F2"
             >
               I made a mistake (F2)
             </button>
-            <button
-              type="button"
-              class="secondary"
-              onClick=${loadQuotes}
-            >
-              Reload quote data
-            </button>
+            <button type="button" class="secondary" onClick=${loadQuotes}>Reload quote data</button>
           </div>
 
           <div class="hint">
-            Strict mode: only the exact next character advances progress. Wrong keys increase Typos. Manual form mistakes are tracked separately.
+            Strict mode: only the exact next character advances progress. Wrong keys increase Typos.
+            Manual form mistakes are tracked separately.
           </div>
         </section>
 
         <section class="status">
-          ${dataStatus === "loading"
-            ? "Loading quote data..."
-            : dataStatus === "error"
+          ${dataStatus === 'loading'
+            ? 'Loading quote data...'
+            : dataStatus === 'error'
               ? html`<span class="error">Error: ${errorMessage}</span>`
               : `Loaded ${quotes.length} quotes. Passage starts with high T/G/B/Y/H/N density, then gradually blends toward normal quote text.`}
         </section>
@@ -384,7 +385,9 @@ async function loadQuotes() {
             : html`<ol class="history-list">
                 ${history.map(
                   (row) => html`<li key=${row.at}>
-                    ${new Date(row.at).toLocaleTimeString()} | ${Math.round(row.elapsed / 1000)}s | ${row.wpm} WPM | ${row.accuracy}% | typos ${row.typoCount} | finger ${row.fingerMistakes}
+                    ${new Date(row.at).toLocaleTimeString()} | ${Math.round(row.elapsed / 1000)}s |
+                    ${row.wpm} WPM | ${row.accuracy}% | typos ${row.typoCount} | finger
+                    ${row.fingerMistakes}
                   </li>`,
                 )}
               </ol>`}
@@ -394,4 +397,4 @@ async function loadQuotes() {
   `;
 }
 
-render(html`<${App} />`, document.getElementById("app"));
+render(html`<${App} />`, document.getElementById('app'));

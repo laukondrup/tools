@@ -2,13 +2,18 @@ name: Auto-update README tool index
 
 on:
   push:
-    branches: ["main"]
+    branches: ['main']
     paths:
-      - "**/index.html"
-      - "**/*.html"
-      - "scripts/generate-readme.sh"
-      - ".github/workflows/update-readme.yml"
-      - ".github/workflows/static.yml"
+      - '**/index.html'
+      - '**/*.html'
+      - '**/*.js'
+      - '**/*.json'
+      - 'scripts/generate-readme.sh'
+      - 'scripts/capture-previews.mjs'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+      - '.github/workflows/update-readme.yml'
+      - '.github/workflows/static.yml'
   workflow_dispatch:
 
 permissions:
@@ -21,18 +26,38 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Playwright browsers
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Capture tool previews
+        run: pnpm run capture-previews
+
       - name: Generate README
         run: ./scripts/generate-readme.sh
 
       - name: Commit changes
         run: |
-          if git diff --quiet -- README.md; then
-            echo "No README changes to commit"
+          if git diff --quiet -- README.md */preview.png; then
+            echo "No README or preview changes to commit"
             exit 0
           fi
 
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add README.md
-          git commit -m "chore: auto-update README tool index"
+          git add README.md */preview.png
+          git commit -m "chore: auto-update README index and tool previews"
           git push

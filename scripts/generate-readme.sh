@@ -30,7 +30,12 @@ TMP_README="$(mktemp)"
       if [ -z "$title" ]; then
         title="$(basename "$tool_dir")"
       fi
-      printf -- "- [%s](%s) (\`%s\`)\n" "$title" "$link_path" "$rel_path"
+      preview_path="${tool_dir}/preview.png"
+      if [ -f "$preview_path" ]; then
+        printf -- "- [%s](%s) (\`%s\`) ![%s preview](%s)\n" "$title" "$link_path" "$rel_path" "$title" "$preview_path"
+      else
+        printf -- "- [%s](%s) (\`%s\`)\n" "$title" "$link_path" "$rel_path"
+      fi
     done
   fi
   echo "$END_MARKER"

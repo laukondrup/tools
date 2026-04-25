@@ -23,7 +23,7 @@
 
       body {
         margin: 0;
-        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         background: radial-gradient(circle at top, #eef4ff 0%, var(--bg) 60%);
         color: var(--text);
         min-height: 100vh;
@@ -77,7 +77,7 @@
         cursor: not-allowed;
       }
 
-      input[type="text"] {
+      input[type='text'] {
         border: 1px solid var(--line);
         border-radius: 10px;
         padding: 0.6rem 0.75rem;
@@ -217,69 +217,69 @@
     <div id="app"></div>
 
     <script type="module">
-      import { h, render } from "https://esm.sh/preact@10.26.6";
-      import { useEffect, useMemo, useState } from "https://esm.sh/preact@10.26.6/hooks";
+      import { h, render } from 'https://esm.sh/preact@10.26.6';
+      import { useEffect, useMemo, useState } from 'https://esm.sh/preact@10.26.6/hooks';
 
       const symbolMap = {
-        clearsky: "Clear",
-        fair: "Fair",
-        partlycloudy: "Partly Cloudy",
-        cloudy: "Cloudy",
-        rainshowers: "Rain Showers",
-        rainshowersandthunder: "Thunder Showers",
-        sleetshowers: "Sleet Showers",
-        snowshowers: "Snow Showers",
-        rain: "Rain",
-        heavyrain: "Heavy Rain",
-        heavyrainandthunder: "Heavy Rain & Thunder",
-        sleet: "Sleet",
-        snow: "Snow",
-        snowandthunder: "Snow & Thunder",
-        fog: "Fog",
-        sleetshowersandthunder: "Sleet & Thunder",
-        snowshowersandthunder: "Snow & Thunder",
-        rainandthunder: "Rain & Thunder",
-        sleetandthunder: "Sleet & Thunder",
+        clearsky: 'Clear',
+        fair: 'Fair',
+        partlycloudy: 'Partly Cloudy',
+        cloudy: 'Cloudy',
+        rainshowers: 'Rain Showers',
+        rainshowersandthunder: 'Thunder Showers',
+        sleetshowers: 'Sleet Showers',
+        snowshowers: 'Snow Showers',
+        rain: 'Rain',
+        heavyrain: 'Heavy Rain',
+        heavyrainandthunder: 'Heavy Rain & Thunder',
+        sleet: 'Sleet',
+        snow: 'Snow',
+        snowandthunder: 'Snow & Thunder',
+        fog: 'Fog',
+        sleetshowersandthunder: 'Sleet & Thunder',
+        snowshowersandthunder: 'Snow & Thunder',
+        rainandthunder: 'Rain & Thunder',
+        sleetandthunder: 'Sleet & Thunder',
       };
-      const WEATHER_CACHE_PREFIX = "yr-weather-cache-v1:";
-      const WEATHER_STATE_KEY = "yr-weather-state-v1";
+      const WEATHER_CACHE_PREFIX = 'yr-weather-cache-v1:';
+      const WEATHER_STATE_KEY = 'yr-weather-state-v1';
 
       function interpretSymbolCode(symbolCode) {
-        const baseCode = String(symbolCode || "").replace(/_day|_night|_polartwilight/g, "");
-        return symbolMap[baseCode] || baseCode || "Unknown";
+        const baseCode = String(symbolCode || '').replace(/_day|_night|_polartwilight/g, '');
+        return symbolMap[baseCode] || baseCode || 'Unknown';
       }
 
       function hasThunder(condition) {
-        return condition.toLowerCase().includes("thunder");
+        return condition.toLowerCase().includes('thunder');
       }
 
       function formatDay(dateStr) {
-        return new Date(dateStr + "T00:00:00Z").toLocaleDateString(undefined, {
-          weekday: "short",
-          month: "short",
-          day: "numeric",
+        return new Date(dateStr + 'T00:00:00Z').toLocaleDateString(undefined, {
+          weekday: 'short',
+          month: 'short',
+          day: 'numeric',
         });
       }
 
       function getRelativeDayLabel(dateStr) {
         const now = new Date();
         const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-        const dayDate = new Date(dateStr + "T00:00:00");
+        const dayDate = new Date(dateStr + 'T00:00:00');
         const target = new Date(dayDate.getFullYear(), dayDate.getMonth(), dayDate.getDate());
         const msPerDay = 24 * 60 * 60 * 1000;
         const diffDays = Math.round((target.getTime() - today.getTime()) / msPerDay);
 
-        if (diffDays === 0) return "Today";
-        if (diffDays === 1) return "Tomorrow";
-        if (diffDays === -1) return "Yesterday";
+        if (diffDays === 0) return 'Today';
+        if (diffDays === 1) return 'Tomorrow';
+        if (diffDays === -1) return 'Yesterday';
         if (diffDays > 1 && diffDays < 7) {
-          return target.toLocaleDateString(undefined, { weekday: "long" });
+          return target.toLocaleDateString(undefined, { weekday: 'long' });
         }
-        return "";
+        return '';
       }
 
       function getDateKey(isoTimestamp) {
-        return new Date(isoTimestamp).toISOString().split("T")[0];
+        return new Date(isoTimestamp).toISOString().split('T')[0];
       }
 
       function roundCoord(value) {
@@ -295,7 +295,7 @@
           const raw = localStorage.getItem(getCacheKey(lat, lon));
           if (!raw) return null;
           const parsed = JSON.parse(raw);
-          if (!parsed || typeof parsed !== "object") return null;
+          if (!parsed || typeof parsed !== 'object') return null;
           return parsed;
         } catch {
           return null;
@@ -310,14 +310,14 @@
 
       function readStateFromUrl() {
         const params = new URLSearchParams(window.location.search);
-        const q = (params.get("q") || "").trim();
-        const latRaw = params.get("lat");
-        const lngRaw = params.get("lng");
+        const q = (params.get('q') || '').trim();
+        const latRaw = params.get('lat');
+        const lngRaw = params.get('lng');
         const hasCoords =
           latRaw != null &&
           lngRaw != null &&
-          String(latRaw).trim() !== "" &&
-          String(lngRaw).trim() !== "";
+          String(latRaw).trim() !== '' &&
+          String(lngRaw).trim() !== '';
         const lat = hasCoords ? Number(latRaw) : NaN;
         const lng = hasCoords ? Number(lngRaw) : NaN;
         return {
@@ -329,18 +329,20 @@
       function readStateFromLocalStorage() {
         try {
           const raw = localStorage.getItem(WEATHER_STATE_KEY);
-          if (!raw) return { q: "", coords: null };
+          if (!raw) return { q: '', coords: null };
           const parsed = JSON.parse(raw);
-          if (!parsed || typeof parsed !== "object") return { q: "", coords: null };
+          if (!parsed || typeof parsed !== 'object') return { q: '', coords: null };
 
-          const q = typeof parsed.q === "string" ? parsed.q.trim() : "";
-          const lat = typeof parsed?.coords?.lat === "number" ? parsed.coords.lat : NaN;
-          const lng = typeof parsed?.coords?.lng === "number" ? parsed.coords.lng : NaN;
+          const q = typeof parsed.q === 'string' ? parsed.q.trim() : '';
+          const lat = typeof parsed?.coords?.lat === 'number' ? parsed.coords.lat : NaN;
+          const lng = typeof parsed?.coords?.lng === 'number' ? parsed.coords.lng : NaN;
           const coords =
-            Number.isFinite(lat) && Number.isFinite(lng) ? { lat: roundCoord(lat), lng: roundCoord(lng) } : null;
+            Number.isFinite(lat) && Number.isFinite(lng)
+              ? { lat: roundCoord(lat), lng: roundCoord(lng) }
+              : null;
           return { q, coords };
         } catch {
-          return { q: "", coords: null };
+          return { q: '', coords: null };
         }
       }
 
@@ -352,20 +354,20 @@
 
       function writeCoordsToUrl(lat, lng) {
         const params = new URLSearchParams(window.location.search);
-        params.delete("q");
-        params.set("lat", String(lat));
-        params.set("lng", String(lng));
+        params.delete('q');
+        params.set('lat', String(lat));
+        params.set('lng', String(lng));
         const next = `${window.location.pathname}?${params.toString()}${window.location.hash}`;
-        window.history.replaceState({}, "", next);
+        window.history.replaceState({}, '', next);
       }
 
       function writeQueryToUrl(query) {
         const params = new URLSearchParams(window.location.search);
-        params.delete("lat");
-        params.delete("lng");
-        params.set("q", query);
+        params.delete('lat');
+        params.delete('lng');
+        params.set('q', query);
         const next = `${window.location.pathname}?${params.toString()}${window.location.hash}`;
-        window.history.replaceState({}, "", next);
+        window.history.replaceState({}, '', next);
       }
 
       function summarizeForecast(forecast) {
@@ -377,7 +379,7 @@
           const wind = entry?.data?.instant?.details?.wind_speed;
           const gust = entry?.data?.instant?.details?.wind_speed_of_gust;
 
-          if (typeof temp !== "number" || typeof wind !== "number") {
+          if (typeof temp !== 'number' || typeof wind !== 'number') {
             continue;
           }
 
@@ -395,7 +397,7 @@
           day.temps.push(temp);
           day.windSpeeds.push(wind);
 
-          if (typeof gust === "number") {
+          if (typeof gust === 'number') {
             day.windGusts.push(gust);
           }
 
@@ -418,7 +420,7 @@
         const summaries = [];
 
         for (const [date, day] of dailyData.entries()) {
-          let dominantCondition = "Unknown";
+          let dominantCondition = 'Unknown';
           let maxCount = 0;
           const conditionSet = new Set();
 
@@ -434,13 +436,11 @@
             date,
             highTemp: Math.max(...day.temps),
             lowTemp: Math.min(...day.temps),
-            tempDiff: "",
+            tempDiff: '',
             totalPrecipitation: Math.round(day.precipitation * 10) / 10,
             maxWindSpeed: Math.round(Math.max(...day.windSpeeds) * 10) / 10,
             maxWindGust:
-              day.windGusts.length > 0
-                ? Math.round(Math.max(...day.windGusts) * 10) / 10
-                : null,
+              day.windGusts.length > 0 ? Math.round(Math.max(...day.windGusts) * 10) / 10 : null,
             conditions: conditionSet,
             dominantCondition,
           });
@@ -457,33 +457,33 @@
       }
 
       function getTempDiffClass(tempDiff) {
-        const numeric = Number(String(tempDiff || "").replace("+", ""));
-        return Number.isFinite(numeric) && Math.abs(numeric) >= 5 ? "temp-alert" : "temp-normal";
+        const numeric = Number(String(tempDiff || '').replace('+', ''));
+        return Number.isFinite(numeric) && Math.abs(numeric) >= 5 ? 'temp-alert' : 'temp-normal';
       }
 
       function getWindClass(maxWindSpeed) {
-        if (maxWindSpeed < 5) return "wind-normal";
-        if (maxWindSpeed > 8) return "wind-alert";
-        return "wind-mid";
+        if (maxWindSpeed < 5) return 'wind-normal';
+        if (maxWindSpeed > 8) return 'wind-alert';
+        return 'wind-mid';
       }
 
       function getGustClass(maxWindGust) {
-        if (typeof maxWindGust !== "number") return "wind-normal";
-        if (maxWindGust < 8) return "wind-normal";
-        if (maxWindGust > 15) return "gust-alert";
-        return "wind-mid";
+        if (typeof maxWindGust !== 'number') return 'wind-normal';
+        if (maxWindGust < 8) return 'wind-normal';
+        if (maxWindGust > 15) return 'gust-alert';
+        return 'wind-mid';
       }
 
       function getConditionClass(condition) {
-        if (condition.toLowerCase().includes("rain")) return "condition-rain";
-        return condition === "Clear" || condition === "Fair" ? "condition-good" : "";
+        if (condition.toLowerCase().includes('rain')) return 'condition-rain';
+        return condition === 'Clear' || condition === 'Fair' ? 'condition-good' : '';
       }
 
       async function fetchForecast(lat, lon, lastModified) {
         const url = `https://api.met.no/weatherapi/locationforecast/2.0/complete?lat=${encodeURIComponent(lat)}&lon=${encodeURIComponent(lon)}`;
         const headers = {};
         if (lastModified) {
-          headers["If-Modified-Since"] = lastModified;
+          headers['If-Modified-Since'] = lastModified;
         }
 
         const response = await fetch(url, { headers });
@@ -491,8 +491,8 @@
         if (response.status === 304) {
           return {
             status: response.status,
-            expires: response.headers.get("Expires") || null,
-            lastModified: response.headers.get("Last-Modified") || lastModified || null,
+            expires: response.headers.get('Expires') || null,
+            lastModified: response.headers.get('Last-Modified') || lastModified || null,
             data: null,
           };
         }
@@ -503,8 +503,8 @@
 
         return {
           status: response.status,
-          expires: response.headers.get("Expires") || null,
-          lastModified: response.headers.get("Last-Modified") || null,
+          expires: response.headers.get('Expires') || null,
+          lastModified: response.headers.get('Last-Modified') || null,
           data: await response.json(),
         };
       }
@@ -513,7 +513,7 @@
         const url = `https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&q=${encodeURIComponent(query)}`;
         const response = await fetch(url, {
           headers: {
-            Accept: "application/json",
+            Accept: 'application/json',
           },
         });
 
@@ -523,7 +523,7 @@
 
         const results = await response.json();
         if (!Array.isArray(results) || results.length === 0) {
-          throw new Error("No matching location found.");
+          throw new Error('No matching location found.');
         }
 
         const first = results[0];
@@ -535,16 +535,16 @@
       }
 
       function App() {
-        const [status, setStatus] = useState("Search for a place or click \"Use my location\".");
+        const [status, setStatus] = useState('Search for a place or click "Use my location".');
         const [forecast, setForecast] = useState(null);
-        const [locationLabel, setLocationLabel] = useState("");
-        const [searchQuery, setSearchQuery] = useState("");
+        const [locationLabel, setLocationLabel] = useState('');
+        const [searchQuery, setSearchQuery] = useState('');
         const [isLoading, setIsLoading] = useState(false);
 
         const dailyRows = useMemo(() => summarizeForecast(forecast), [forecast]);
 
         async function loadForecastFor(lat, lng, label, options = {}) {
-          const { urlMode = "coords", query = "" } = options;
+          const { urlMode = 'coords', query = '' } = options;
           const roundedLat = roundCoord(lat);
           const roundedLng = roundCoord(lng);
           const now = Date.now();
@@ -558,20 +558,24 @@
           ) {
             setForecast(cached.forecast);
             setLocationLabel(label || `${roundedLat.toFixed(4)}, ${roundedLng.toFixed(4)}`);
-            if (urlMode === "coords") {
+            if (urlMode === 'coords') {
               writeCoordsToUrl(roundedLat, roundedLng);
-              writeStateToLocalStorage({ q: "", coords: { lat: roundedLat, lng: roundedLng } });
+              writeStateToLocalStorage({ q: '', coords: { lat: roundedLat, lng: roundedLng } });
             } else {
               writeStateToLocalStorage({ q: query, coords: { lat: roundedLat, lng: roundedLng } });
             }
-            setStatus("Forecast loaded from cache.");
+            setStatus('Forecast loaded from cache.');
             setIsLoading(false);
             return;
           }
 
-          setStatus("Loading forecast...");
+          setStatus('Loading forecast...');
           try {
-            const response = await fetchForecast(roundedLat, roundedLng, cached?.lastModified || null);
+            const response = await fetchForecast(
+              roundedLat,
+              roundedLng,
+              cached?.lastModified || null,
+            );
             const expiresAt = response.expires ? Date.parse(response.expires) : NaN;
 
             if (response.status === 304 && cached?.forecast) {
@@ -584,13 +588,16 @@
                   lastModified: response.lastModified || cached.lastModified || null,
                 });
               }
-              if (urlMode === "coords") {
+              if (urlMode === 'coords') {
                 writeCoordsToUrl(roundedLat, roundedLng);
-                writeStateToLocalStorage({ q: "", coords: { lat: roundedLat, lng: roundedLng } });
+                writeStateToLocalStorage({ q: '', coords: { lat: roundedLat, lng: roundedLng } });
               } else {
-                writeStateToLocalStorage({ q: query, coords: { lat: roundedLat, lng: roundedLng } });
+                writeStateToLocalStorage({
+                  q: query,
+                  coords: { lat: roundedLat, lng: roundedLng },
+                });
               }
-              setStatus("Forecast not modified; reused cached data.");
+              setStatus('Forecast not modified; reused cached data.');
               setIsLoading(false);
               return;
             }
@@ -603,21 +610,27 @@
               expiresAt: Number.isFinite(expiresAt) ? expiresAt : now + 30 * 60 * 1000,
               lastModified: response.lastModified,
             });
-            if (urlMode === "coords") {
+            if (urlMode === 'coords') {
               writeCoordsToUrl(roundedLat, roundedLng);
-              writeStateToLocalStorage({ q: "", coords: { lat: roundedLat, lng: roundedLng } });
+              writeStateToLocalStorage({ q: '', coords: { lat: roundedLat, lng: roundedLng } });
             } else {
               writeStateToLocalStorage({ q: query, coords: { lat: roundedLat, lng: roundedLng } });
             }
             if (response.status === 203) {
-              setStatus("Forecast loaded (warning: endpoint is marked deprecated by upstream status 203).");
+              setStatus(
+                'Forecast loaded (warning: endpoint is marked deprecated by upstream status 203).',
+              );
             } else {
-              setStatus("Forecast loaded.");
+              setStatus('Forecast loaded.');
             }
           } catch (error) {
             setForecast(null);
-            const message = error instanceof Error ? error.message : "Failed to load forecast.";
-            setStatus(message.includes("429") ? `${message}. Throttled by API; please retry later.` : message);
+            const message = error instanceof Error ? error.message : 'Failed to load forecast.';
+            setStatus(
+              message.includes('429')
+                ? `${message}. Throttled by API; please retry later.`
+                : message,
+            );
           } finally {
             setIsLoading(false);
           }
@@ -632,17 +645,17 @@
             if (state.q) {
               setSearchQuery(state.q);
               setIsLoading(true);
-              setStatus("Searching location...");
+              setStatus('Searching location...');
               try {
                 const place = await geocodeLocation(state.q);
                 await loadForecastFor(place.lat, place.lng, place.label, {
-                  urlMode: "query",
+                  urlMode: 'query',
                   query: state.q,
                 });
                 writeQueryToUrl(state.q);
               } catch (error) {
                 setForecast(null);
-                setStatus(error instanceof Error ? error.message : "Failed to search location.");
+                setStatus(error instanceof Error ? error.message : 'Failed to search location.');
                 setIsLoading(false);
               }
               return;
@@ -654,7 +667,7 @@
                 state.coords.lat,
                 state.coords.lng,
                 `${state.coords.lat.toFixed(4)}, ${state.coords.lng.toFixed(4)}`,
-                { urlMode: "coords" }
+                { urlMode: 'coords' },
               );
             }
           }
@@ -664,32 +677,37 @@
 
         async function requestLocationAndLoad() {
           if (!navigator.geolocation) {
-            setStatus("Geolocation is not supported in this browser.");
+            setStatus('Geolocation is not supported in this browser.');
             return;
           }
 
           setIsLoading(true);
-          setStatus("Requesting location permission...");
+          setStatus('Requesting location permission...');
 
           navigator.geolocation.getCurrentPosition(
             async (position) => {
               const { latitude, longitude } = position.coords;
-              await loadForecastFor(latitude, longitude, `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`, {
-                urlMode: "coords",
-              });
+              await loadForecastFor(
+                latitude,
+                longitude,
+                `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`,
+                {
+                  urlMode: 'coords',
+                },
+              );
             },
             (error) => {
               const message =
                 error.code === error.PERMISSION_DENIED
-                  ? "Location permission denied. Enable location and try again."
-                  : error.message || "Failed to get your location.";
+                  ? 'Location permission denied. Enable location and try again.'
+                  : error.message || 'Failed to get your location.';
               setStatus(message);
               setIsLoading(false);
             },
             {
               enableHighAccuracy: false,
               timeout: 10000,
-            }
+            },
           );
         }
 
@@ -697,75 +715,71 @@
           event.preventDefault();
           const query = searchQuery.trim();
           if (!query) {
-            setStatus("Enter a location to search.");
+            setStatus('Enter a location to search.');
             return;
           }
 
           setIsLoading(true);
-          setStatus("Searching location...");
+          setStatus('Searching location...');
           try {
             const place = await geocodeLocation(query);
-            await loadForecastFor(place.lat, place.lng, place.label, { urlMode: "query", query });
+            await loadForecastFor(place.lat, place.lng, place.label, { urlMode: 'query', query });
             writeQueryToUrl(query);
           } catch (error) {
             setForecast(null);
-            setStatus(error instanceof Error ? error.message : "Failed to search location.");
+            setStatus(error instanceof Error ? error.message : 'Failed to search location.');
             setIsLoading(false);
           }
         }
 
-        return h("div", { class: "container" }, [
-          h("h1", null, "Local Weather Forecast"),
+        return h('div', { class: 'container' }, [
+          h('h1', null, 'Local Weather Forecast'),
           h(
-            "p",
-            { class: "subtitle" },
-            "This app does not assume your location. Search for a place or use geolocation."
+            'p',
+            { class: 'subtitle' },
+            'This app does not assume your location. Search for a place or use geolocation.',
           ),
-          h("div", { class: "controls" }, [
+          h('div', { class: 'controls' }, [
             h(
-              "button",
+              'button',
               { onClick: requestLocationAndLoad, disabled: isLoading },
-              isLoading ? "Loading..." : "Use my location"
+              isLoading ? 'Loading...' : 'Use my location',
             ),
-            h(
-              "form",
-              { class: "search-form", onSubmit: searchLocationAndLoad },
-              [
-                h("input", {
-                  type: "text",
-                  value: searchQuery,
-                  onInput: (event) => setSearchQuery(event.currentTarget.value),
-                  placeholder: "Search city, region, country...",
-                  "aria-label": "Search location",
-                  disabled: isLoading,
-                }),
-                h(
-                  "button",
-                  { type: "submit", disabled: isLoading },
-                  isLoading ? "Loading..." : "Search"
-                ),
-              ]
-            ),
-            locationLabel ? h("span", null, `Location: ${locationLabel}`) : null,
+            h('form', { class: 'search-form', onSubmit: searchLocationAndLoad }, [
+              h('input', {
+                type: 'text',
+                value: searchQuery,
+                onInput: (event) => setSearchQuery(event.currentTarget.value),
+                placeholder: 'Search city, region, country...',
+                'aria-label': 'Search location',
+                disabled: isLoading,
+              }),
+              h(
+                'button',
+                { type: 'submit', disabled: isLoading },
+                isLoading ? 'Loading...' : 'Search',
+              ),
+            ]),
+            locationLabel ? h('span', null, `Location: ${locationLabel}`) : null,
           ]),
-          h("div", { class: "status" }, status),
+          h('div', { class: 'status' }, status),
           dailyRows.length
-            ? h("div", { class: "table-wrap" }, [
-                h("table", null, [
-                  h("thead", null, [
-                    h("tr", null, [
-                      h("th", null, "Date"),
-                      h("th", null, "High / Low (°C)"),
-                      h("th", null, "Temp Diff"),
-                      h("th", null, "Rain (mm)"),
-                      h("th", null, "Max Wind (m/s)"),
-                      h("th", null, "Max Gust (m/s)"),
-                      h("th", null, "Conditions"),
-                      h("th", null, "All Conditions"),
+            ? h('div', { class: 'table-wrap' }, [
+                h('table', null, [
+                  h('thead', null, [
+                    h('tr', null, [
+                      h('th', null, 'Date'),
+                      h('th', null, 'High / Low (°C)'),
+                      h('th', null, 'Temp Diff'),
+                      h('th', null, 'Rain (mm)'),
+                      h('th', null, 'Max Wind (m/s)'),
+                      h('th', null, 'Max Gust (m/s)'),
+                      h('th', null, 'Conditions'),
+                      h('th', null, 'All Conditions'),
                     ]),
                   ]),
                   h(
-                    "tbody",
+                    'tbody',
                     null,
                     dailyRows.map((day) => {
                       const allConditions = Array.from(day.conditions);
@@ -773,80 +787,80 @@
                       const tempClass = getTempDiffClass(day.tempDiff);
                       const windClass = getWindClass(day.maxWindSpeed);
                       const gustClass = getGustClass(day.maxWindGust);
-                      return h("tr", { key: day.date }, [
-                        h("td", null, [
-                          h("div", { class: "date-main" }, formatDay(day.date)),
-                          relativeLabel ? h("div", { class: "date-sub" }, relativeLabel) : null,
+                      return h('tr', { key: day.date }, [
+                        h('td', null, [
+                          h('div', { class: 'date-main' }, formatDay(day.date)),
+                          relativeLabel ? h('div', { class: 'date-sub' }, relativeLabel) : null,
                         ]),
-                        h("td", null, `${Math.round(day.highTemp)}° / ${Math.round(day.lowTemp)}°`),
+                        h('td', null, `${Math.round(day.highTemp)}° / ${Math.round(day.lowTemp)}°`),
                         h(
-                          "td",
+                          'td',
                           null,
                           day.tempDiff
-                            ? h("span", { class: `badge ${tempClass}` }, day.tempDiff)
-                            : "-"
+                            ? h('span', { class: `badge ${tempClass}` }, day.tempDiff)
+                            : '-',
                         ),
-                        h("td", null, day.totalPrecipitation || "-"),
-                        h("td", null, h("span", { class: `badge ${windClass}` }, day.maxWindSpeed)),
+                        h('td', null, day.totalPrecipitation || '-'),
+                        h('td', null, h('span', { class: `badge ${windClass}` }, day.maxWindSpeed)),
                         h(
-                          "td",
+                          'td',
                           null,
                           day.maxWindGust != null
-                            ? h("span", { class: `badge ${gustClass}` }, day.maxWindGust)
-                            : "-"
+                            ? h('span', { class: `badge ${gustClass}` }, day.maxWindGust)
+                            : '-',
                         ),
                         h(
-                          "td",
+                          'td',
                           null,
-                          `${day.dominantCondition}${allConditions.some(hasThunder) ? " ⚡" : ""}`
+                          `${day.dominantCondition}${allConditions.some(hasThunder) ? ' ⚡' : ''}`,
                         ),
                         h(
-                          "td",
+                          'td',
                           null,
                           allConditions.length
                             ? allConditions.map((condition, index) =>
-                                h("span", { class: getConditionClass(condition) || null }, [
+                                h('span', { class: getConditionClass(condition) || null }, [
                                   condition,
-                                  index < allConditions.length - 1 ? ", " : "",
-                                ])
+                                  index < allConditions.length - 1 ? ', ' : '',
+                                ]),
                               )
-                            : "-"
+                            : '-',
                         ),
                       ]);
-                    })
+                    }),
                   ),
                 ]),
-                h("div", { class: "legend" }, [
-                  h("span", null, "Temp diff alert: ±5°C or more"),
-                  h("span", null, "Max wind green: < 5 m/s"),
-                  h("span", null, "Max gust green: < 8 m/s"),
-                  h("span", null, "Wind/gust alert: > 8 / > 15 m/s"),
+                h('div', { class: 'legend' }, [
+                  h('span', null, 'Temp diff alert: ±5°C or more'),
+                  h('span', null, 'Max wind green: < 5 m/s'),
+                  h('span', null, 'Max gust green: < 8 m/s'),
+                  h('span', null, 'Wind/gust alert: > 8 / > 15 m/s'),
                 ]),
               ])
             : h(
-                "div",
-                { class: "empty" },
-                "No weather loaded yet. Click the location button to fetch forecast data."
+                'div',
+                { class: 'empty' },
+                'No weather loaded yet. Click the location button to fetch forecast data.',
               ),
-          h("div", { class: "attribution" }, [
-            "Weather data from ",
-            h("a", { href: "https://www.yr.no/", target: "_blank", rel: "noreferrer" }, "Yr"),
-            " / MET Norway. Presented in a modified table format. Licensed under ",
+          h('div', { class: 'attribution' }, [
+            'Weather data from ',
+            h('a', { href: 'https://www.yr.no/', target: '_blank', rel: 'noreferrer' }, 'Yr'),
+            ' / MET Norway. Presented in a modified table format. Licensed under ',
             h(
-              "a",
+              'a',
               {
-                href: "https://creativecommons.org/licenses/by/4.0/",
-                target: "_blank",
-                rel: "noreferrer",
+                href: 'https://creativecommons.org/licenses/by/4.0/',
+                target: '_blank',
+                rel: 'noreferrer',
               },
-              "CC BY 4.0"
+              'CC BY 4.0',
             ),
-            ".",
+            '.',
           ]),
         ]);
       }
 
-      render(h(App), document.getElementById("app"));
+      render(h(App), document.getElementById('app'));
     </script>
   </body>
 </html>
