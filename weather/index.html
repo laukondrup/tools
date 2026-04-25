@@ -211,6 +211,123 @@
       .attribution a {
         color: var(--accent);
       }
+
+      @media (max-width: 760px) {
+        .container {
+          width: calc(100vw - 1rem);
+          margin: 0.5rem auto 1rem;
+          border-radius: 10px;
+          padding: 0.85rem;
+        }
+
+        h1 {
+          font-size: 1.2rem;
+        }
+
+        .controls {
+          align-items: stretch;
+          gap: 0.55rem;
+        }
+
+        .controls > button {
+          width: 100%;
+        }
+
+        .search-form {
+          width: 100%;
+          flex-direction: column;
+          align-items: stretch;
+        }
+
+        input[type='text'] {
+          min-width: 0;
+          width: 100%;
+        }
+
+        .search-form button {
+          width: 100%;
+        }
+
+        .table-wrap {
+          overflow-x: visible;
+        }
+
+        table {
+          min-width: 0;
+          border-collapse: separate;
+          border-spacing: 0;
+        }
+
+        thead {
+          display: none;
+        }
+
+        tbody {
+          display: grid;
+          gap: 0.75rem;
+        }
+
+        tbody tr {
+          display: block;
+          border: 1px solid var(--line);
+          border-radius: 10px;
+          background: #fff;
+          padding: 0.35rem 0.5rem;
+          box-shadow: 0 2px 8px rgba(20, 37, 63, 0.06);
+        }
+
+        tbody td {
+          display: grid;
+          grid-template-columns: minmax(110px, 40%) 1fr;
+          gap: 0.45rem;
+          align-items: baseline;
+          border: 0;
+          border-bottom: 1px dashed var(--line);
+          padding: 0.45rem 0.25rem;
+          font-size: 0.88rem;
+        }
+
+        tbody tr td:last-child {
+          border-bottom: 0;
+        }
+
+        tbody td::before {
+          font-size: 0.72rem;
+          font-weight: 700;
+          color: var(--muted);
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+        }
+
+        tbody td:nth-child(1)::before {
+          content: 'Date';
+        }
+        tbody td:nth-child(2)::before {
+          content: 'High / Low';
+        }
+        tbody td:nth-child(3)::before {
+          content: 'Temp Diff';
+        }
+        tbody td:nth-child(4)::before {
+          content: 'Rain';
+        }
+        tbody td:nth-child(5)::before {
+          content: 'Max Wind';
+        }
+        tbody td:nth-child(6)::before {
+          content: 'Max Gust';
+        }
+        tbody td:nth-child(7)::before {
+          content: 'Condition';
+        }
+        tbody td:nth-child(8)::before {
+          content: 'All Conditions';
+        }
+
+        .legend {
+          font-size: 0.76rem;
+        }
+      }
     </style>
   </head>
   <body>
