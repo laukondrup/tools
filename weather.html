@@ -199,6 +199,17 @@
         border-radius: 10px;
         color: var(--muted);
       }
+
+      .attribution {
+        margin-top: 1rem;
+        color: var(--muted);
+        font-size: 0.82rem;
+        line-height: 1.4;
+      }
+
+      .attribution a {
+        color: var(--accent);
+      }
     </style>
   </head>
   <body>
@@ -229,6 +240,7 @@
         rainandthunder: "Rain & Thunder",
         sleetandthunder: "Sleet & Thunder",
       };
+      const WEATHER_CACHE_PREFIX = "yr-weather-cache-v1:";
 
       function interpretSymbolCode(symbolCode) {
         const baseCode = String(symbolCode || "").replace(/_day|_night|_polartwilight/g, "");
@@ -266,6 +278,32 @@
 
       function getDateKey(isoTimestamp) {
         return new Date(isoTimestamp).toISOString().split("T")[0];
+      }
+
+      function roundCoord(value) {
+        return Math.round(value * 10000) / 10000;
+      }
+
+      function getCacheKey(lat, lon) {
+        return `${WEATHER_CACHE_PREFIX}${lat.toFixed(4)},${lon.toFixed(4)}`;
+      }
+
+      function readCache(lat, lon) {
+        try {
+          const raw = localStorage.getItem(getCacheKey(lat, lon));
+          if (!raw) return null;
+          const parsed = JSON.parse(raw);
+          if (!parsed || typeof parsed !== "object") return null;
+          return parsed;
+        } catch {
+          return null;
+        }
+      }
+
+      function writeCache(lat, lon, payload) {
+        try {
+          localStorage.setItem(getCacheKey(lat, lon), JSON.stringify(payload));
+        } catch {}
       }
 
       function readStateFromUrl() {
@@ -408,15 +446,34 @@
         return condition === "Clear" || condition === "Fair" ? "condition-good" : "";
       }
 
-      async function fetchForecast(lat, lon) {
+      async function fetchForecast(lat, lon, lastModified) {
         const url = `https://api.met.no/weatherapi/locationforecast/2.0/complete?lat=${encodeURIComponent(lat)}&lon=${encodeURIComponent(lon)}`;
-        const response = await fetch(url);
+        const headers = {};
+        if (lastModified) {
+          headers["If-Modified-Since"] = lastModified;
+        }
+
+        const response = await fetch(url, { headers });
+
+        if (response.status === 304) {
+          return {
+            status: response.status,
+            expires: response.headers.get("Expires") || null,
+            lastModified: response.headers.get("Last-Modified") || lastModified || null,
+            data: null,
+          };
+        }
 
         if (!response.ok) {
           throw new Error(`Forecast request failed: ${response.status} ${response.statusText}`);
         }
 
-        return response.json();
+        return {
+          status: response.status,
+          expires: response.headers.get("Expires") || null,
+          lastModified: response.headers.get("Last-Modified") || null,
+          data: await response.json(),
+        };
       }
 
       async function geocodeLocation(query) {
@@ -454,18 +511,70 @@
         const dailyRows = useMemo(() => summarizeForecast(forecast), [forecast]);
 
         async function loadForecastFor(lat, lng, label, urlMode = "coords") {
+          const roundedLat = roundCoord(lat);
+          const roundedLng = roundCoord(lng);
+          const now = Date.now();
+          const cached = readCache(roundedLat, roundedLng);
+          if (
+            cached &&
+            cached.expiresAt &&
+            Number.isFinite(cached.expiresAt) &&
+            cached.expiresAt > now &&
+            cached.forecast
+          ) {
+            setForecast(cached.forecast);
+            setLocationLabel(label || `${roundedLat.toFixed(4)}, ${roundedLng.toFixed(4)}`);
+            if (urlMode === "coords") {
+              writeCoordsToUrl(roundedLat, roundedLng);
+            }
+            setStatus("Forecast loaded from cache.");
+            setIsLoading(false);
+            return;
+          }
+
           setStatus("Loading forecast...");
           try {
-            const data = await fetchForecast(lat, lng);
-            setForecast(data);
-            setLocationLabel(label || `${lat.toFixed(4)}, ${lng.toFixed(4)}`);
-            if (urlMode === "coords") {
-              writeCoordsToUrl(lat, lng);
+            const response = await fetchForecast(roundedLat, roundedLng, cached?.lastModified || null);
+            const expiresAt = response.expires ? Date.parse(response.expires) : NaN;
+
+            if (response.status === 304 && cached?.forecast) {
+              setForecast(cached.forecast);
+              setLocationLabel(label || `${roundedLat.toFixed(4)}, ${roundedLng.toFixed(4)}`);
+              if (Number.isFinite(expiresAt)) {
+                writeCache(roundedLat, roundedLng, {
+                  forecast: cached.forecast,
+                  expiresAt,
+                  lastModified: response.lastModified || cached.lastModified || null,
+                });
+              }
+              if (urlMode === "coords") {
+                writeCoordsToUrl(roundedLat, roundedLng);
+              }
+              setStatus("Forecast not modified; reused cached data.");
+              setIsLoading(false);
+              return;
             }
-            setStatus("Forecast loaded.");
+
+            setForecast(response.data);
+            setLocationLabel(label || `${roundedLat.toFixed(4)}, ${roundedLng.toFixed(4)}`);
+
+            writeCache(roundedLat, roundedLng, {
+              forecast: response.data,
+              expiresAt: Number.isFinite(expiresAt) ? expiresAt : now + 30 * 60 * 1000,
+              lastModified: response.lastModified,
+            });
+            if (urlMode === "coords") {
+              writeCoordsToUrl(roundedLat, roundedLng);
+            }
+            if (response.status === 203) {
+              setStatus("Forecast loaded (warning: endpoint is marked deprecated by upstream status 203).");
+            } else {
+              setStatus("Forecast loaded.");
+            }
           } catch (error) {
             setForecast(null);
-            setStatus(error instanceof Error ? error.message : "Failed to load forecast.");
+            const message = error instanceof Error ? error.message : "Failed to load forecast.";
+            setStatus(message.includes("429") ? `${message}. Throttled by API; please retry later.` : message);
           } finally {
             setIsLoading(false);
           }
@@ -667,6 +776,21 @@
                 { class: "empty" },
                 "No weather loaded yet. Click the location button to fetch forecast data."
               ),
+          h("div", { class: "attribution" }, [
+            "Weather data from ",
+            h("a", { href: "https://www.yr.no/", target: "_blank", rel: "noreferrer" }, "Yr"),
+            " / MET Norway. Presented in a modified table format. Licensed under ",
+            h(
+              "a",
+              {
+                href: "https://creativecommons.org/licenses/by/4.0/",
+                target: "_blank",
+                rel: "noreferrer",
+              },
+              "CC BY 4.0"
+            ),
+            ".",
+          ]),
         ]);
       }
 
