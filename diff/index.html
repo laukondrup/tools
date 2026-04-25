@@ -116,10 +116,6 @@
         background: rgba(90, 200, 250, 0.06);
       }
 
-      .editable-content.is-title {
-        min-width: 7ch;
-      }
-
       .description-block {
         padding: 0.6rem 1.15rem 0.8rem;
         border-bottom: 1px solid var(--line);
@@ -332,6 +328,18 @@
       .icon-edit svg {
         width: 0.82rem;
         height: 0.82rem;
+      }
+
+      .copy-url-btn {
+        width: auto;
+        height: auto;
+        gap: 0.32rem;
+        padding: 0.34rem 0.5rem;
+      }
+
+      .copy-url-btn span {
+        font-size: 0.72rem;
+        line-height: 1;
       }
 
       .editor-wrap {
@@ -1403,17 +1411,6 @@
           }
         }
 
-        function clearAll() {
-          setTopText('');
-          setBottomText('');
-          setTopFileMeta(null);
-          setBottomFileMeta(null);
-          setTopLanguageSelection('auto');
-          setBottomLanguageSelection('auto');
-          setStatusError(false);
-          setStatusMessage('Cleared both inputs.');
-        }
-
         async function copyUrlToClipboard() {
           try {
             await navigator.clipboard.writeText(window.location.href);
@@ -1566,7 +1563,7 @@
                     'button',
                     {
                       type: 'button',
-                      class: 'icon-edit',
+                      class: 'icon-edit copy-url-btn',
                       onClick: copyUrlToClipboard,
                       title:
                         copyState === 'copied'
@@ -1576,16 +1573,7 @@
                             : 'Copy URL',
                       'aria-label': 'Copy URL',
                     },
-                    h(CopyIcon),
-                  ),
-                  h(
-                    'button',
-                    {
-                      type: 'button',
-                      class: 'danger',
-                      onClick: clearAll,
-                    },
-                    'Clear',
+                    [h(CopyIcon), h('span', null, 'Copy url')],
                   ),
                 ]),
               ]),
