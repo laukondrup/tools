@@ -1,0 +1,454 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Pace Table</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,500;6..72,700&family=IBM+Plex+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --bg: #f5f5f1;
+        --paper: #fffef8;
+        --text: #11110f;
+        --muted: #57574e;
+        --line: #d8d8cc;
+        --accent: #5a6f67;
+        --accent-soft: #edf2ef;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        background:
+          radial-gradient(circle at 10% 10%, #ffffff 0%, transparent 38%),
+          radial-gradient(circle at 90% 90%, #ecece2 0%, transparent 32%),
+          var(--bg);
+        color: var(--text);
+        font-family: "IBM Plex Mono", "Menlo", monospace;
+      }
+
+      .shell {
+        width: min(1180px, calc(100vw - 2rem));
+        margin: 1.5rem auto 2rem;
+        background: color-mix(in srgb, var(--paper) 90%, white 10%);
+        border: 1px solid var(--line);
+        box-shadow: 0 14px 38px rgba(14, 14, 14, 0.08);
+      }
+
+      .top {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 1rem;
+        padding: 1.2rem 1.2rem 1rem;
+        border-bottom: 1px solid var(--line);
+      }
+
+      h1 {
+        margin: 0;
+        font-family: "Newsreader", serif;
+        font-size: clamp(2.2rem, 3.8vw, 3.6rem);
+        line-height: 0.95;
+        letter-spacing: -0.02em;
+        font-weight: 700;
+      }
+
+      .sub {
+        margin-top: 0.45rem;
+        color: var(--muted);
+        font-size: 0.85rem;
+      }
+
+      .controls {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.65rem;
+        align-items: end;
+        justify-content: flex-end;
+      }
+
+      .group {
+        border: 1px solid var(--line);
+        padding: 0.45rem 0.5rem 0.5rem;
+        min-width: 100px;
+      }
+
+      .group label {
+        display: block;
+        font-size: 0.62rem;
+        letter-spacing: 0.07em;
+        text-transform: uppercase;
+        color: var(--muted);
+        margin-bottom: 0.25rem;
+      }
+
+      input[type="number"],
+      select {
+        width: 100%;
+        border: 1px solid var(--line);
+        background: #ffffff;
+        color: var(--text);
+        font: 500 1rem/1 "IBM Plex Mono", monospace;
+        padding: 0.35rem 0.4rem;
+      }
+
+      .toggle {
+        display: inline-flex;
+        gap: 0.35rem;
+        align-items: center;
+        font-size: 0.75rem;
+      }
+
+      .toggle input {
+        accent-color: var(--accent);
+      }
+
+      .table-wrap {
+        overflow-x: auto;
+        position: relative;
+      }
+
+      table {
+        width: 100%;
+        min-width: 1020px;
+        border-collapse: separate;
+        border-spacing: 0;
+      }
+
+      thead th {
+        position: sticky;
+        top: 0;
+        z-index: 5;
+        background: #f1f2ea;
+        border-bottom: 1px solid var(--line);
+        border-right: 1px solid var(--line);
+        box-shadow: inset 0 -1px 0 var(--line);
+        padding: 0.65rem 0.5rem;
+        font-size: 0.72rem;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        white-space: nowrap;
+      }
+
+      tbody td {
+        border-bottom: 1px solid var(--line);
+        border-right: 1px solid var(--line);
+        padding: 0.85rem 0.55rem;
+        font-size: 1.23rem;
+        text-align: center;
+        white-space: nowrap;
+      }
+
+      tbody tr:hover td {
+        background: #f8f8f3;
+      }
+
+      th:first-child,
+      td:first-child {
+        text-align: left;
+        padding-left: 1rem;
+        min-width: 190px;
+      }
+
+      .distance {
+        display: grid;
+        gap: 0.2rem;
+      }
+
+      .distance strong {
+        font-family: "Newsreader", serif;
+        font-size: 1.35rem;
+        font-weight: 700;
+        letter-spacing: -0.01em;
+      }
+
+      .distance span {
+        font-size: 0.7rem;
+        color: var(--muted);
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+      }
+
+      .pace-col {
+        display: grid;
+        gap: 0.17rem;
+      }
+
+      .pace-col b {
+        font-size: 0.76rem;
+      }
+
+      .pace-col small {
+        color: var(--muted);
+        font-size: 0.64rem;
+      }
+
+      .checkpoint-row td {
+        font-size: 0.94rem;
+        padding-top: 0.45rem;
+        padding-bottom: 0.45rem;
+        background: #fbfbf8;
+      }
+
+      .checkpoint-row td:first-child {
+        padding-left: 1.6rem;
+      }
+
+      .checkpoint-label {
+        display: inline-flex;
+        gap: 0;
+        align-items: baseline;
+      }
+
+      .checkpoint-label b {
+        font-size: 0.74rem;
+        color: var(--muted);
+        font-weight: 500;
+        letter-spacing: 0.03em;
+      }
+
+      @media (max-width: 920px) {
+        .top {
+          grid-template-columns: 1fr;
+        }
+
+        .controls {
+          justify-content: flex-start;
+        }
+
+        .shell {
+          width: calc(100vw - 1rem);
+          margin-top: 0.5rem;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="app"></div>
+
+    <script type="module">
+      import { h, render } from "https://esm.sh/preact@10.26.4";
+      import { useMemo, useState } from "https://esm.sh/preact@10.26.4/hooks";
+
+      const EVENTS = [
+        { key: "5k", label: "5K", km: 5 },
+        { key: "10k", label: "10K", km: 10 },
+        { key: "half", label: "Half Marathon", km: 21.0975 },
+        { key: "marathon", label: "Marathon", km: 42.195 },
+      ];
+
+      const DELTAS = [-15, -10, -5, 0, 5, 10, 15];
+      const KM_TO_MILE = 0.621371;
+
+      function clampInt(value, fallback, min, max) {
+        const parsed = Number.parseInt(String(value), 10);
+        if (Number.isNaN(parsed)) return fallback;
+        return Math.min(max, Math.max(min, parsed));
+      }
+
+      function formatPace(secondsPerUnit) {
+        const safe = Math.max(1, Math.round(secondsPerUnit));
+        const m = Math.floor(safe / 60);
+        const s = safe % 60;
+        return `${m}:${String(s).padStart(2, "0")}`;
+      }
+
+      function formatDuration(totalSeconds) {
+        const safe = Math.max(0, Math.round(totalSeconds));
+        const h = Math.floor(safe / 3600);
+        const m = Math.floor((safe % 3600) / 60);
+        const s = safe % 60;
+        if (h > 0) {
+          return `${h}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+        }
+        return `${m}:${String(s).padStart(2, "0")}`;
+      }
+
+      function unitDistance(km, unit) {
+        return unit === "km" ? km : km * KM_TO_MILE;
+      }
+
+      function App() {
+        const [min, setMin] = useState(5);
+        const [sec, setSec] = useState(40);
+        const [unit, setUnit] = useState("km");
+        const [showSplits, setShowSplits] = useState(false);
+
+        const normalizedMin = clampInt(min, 5, 0, 59);
+        const normalizedSec = clampInt(sec, 40, 0, 59);
+        const basePace = normalizedMin * 60 + normalizedSec;
+
+        const paceColumns = useMemo(() => {
+          return DELTAS.map((delta) => {
+            const secPerUnit = Math.max(60, basePace + delta);
+            const label = delta === 0 ? "Base" : delta < 0 ? `Base${delta}s` : `Base+${delta}s`;
+            return {
+              delta,
+              label,
+              secPerUnit,
+              paceText: `${formatPace(secPerUnit)}/${unit}`,
+            };
+          });
+        }, [basePace, unit]);
+
+        const rows = useMemo(() => {
+          return EVENTS.map((event) => {
+            const distanceInUnit = unitDistance(event.km, unit);
+            return {
+              ...event,
+              times: paceColumns.map((col) => formatDuration(distanceInUnit * col.secPerUnit)),
+            };
+          });
+        }, [paceColumns, unit]);
+
+        function splitRowsFor(rangeStartKm, rangeEndKm) {
+          const start = Math.floor(rangeStartKm) + 1;
+          const end = Math.floor(rangeEndKm);
+          const hasPartial = rangeEndKm - end > 0;
+          const items = [];
+
+          for (let i = start; i <= end; i += 1) {
+            items.push({ label: `${i} km`, km: i });
+          }
+          if (hasPartial) {
+            items.push({ label: `${rangeEndKm.toFixed(3)} km`, km: rangeEndKm });
+          }
+
+          return items.map((split) => ({
+            label: split.label,
+            times: paceColumns.map((col) =>
+              formatDuration(unitDistance(split.km, unit) * col.secPerUnit)
+            ),
+          }));
+        }
+
+        return h("main", { class: "shell" }, [
+          h("section", { class: "top" }, [
+            h("div", null, [
+              h("h1", null, "Pace Table"),
+              h("p", { class: "sub" }, "5K, 10K, Half, Marathon"),
+            ]),
+            h("div", { class: "controls" }, [
+              h("div", { class: "group" }, [
+                h("label", { for: "min" }, "Min"),
+                h("input", {
+                  id: "min",
+                  type: "number",
+                  inputMode: "numeric",
+                  min: "0",
+                  max: "59",
+                  value: normalizedMin,
+                  onInput: (e) => setMin(e.currentTarget.value),
+                }),
+              ]),
+              h("div", { class: "group" }, [
+                h("label", { for: "sec" }, "Sec"),
+                h("input", {
+                  id: "sec",
+                  type: "number",
+                  inputMode: "numeric",
+                  min: "0",
+                  max: "59",
+                  value: normalizedSec,
+                  onInput: (e) => setSec(e.currentTarget.value),
+                }),
+              ]),
+              h("div", { class: "group" }, [
+                h("label", { for: "unit" }, "Pace Unit"),
+                h(
+                  "select",
+                  {
+                    id: "unit",
+                    value: unit,
+                    onChange: (e) => setUnit(e.currentTarget.value),
+                  },
+                  [
+                    h("option", { value: "km" }, "per kilometer"),
+                    h("option", { value: "mi" }, "per mile"),
+                  ]
+                ),
+              ]),
+              h("div", { class: "group" }, [
+                h("label", null, "Options"),
+                h("label", { class: "toggle" }, [
+                  h("input", {
+                    type: "checkbox",
+                    checked: showSplits,
+                    onChange: (e) => setShowSplits(e.currentTarget.checked),
+                  }),
+                  "Show splits",
+                ]),
+              ]),
+            ]),
+          ]),
+          h("section", { class: "table-wrap" }, [
+            h("table", null, [
+              h("thead", null, [
+                h("tr", null, [
+                  h("th", null, "Distance"),
+                  ...paceColumns.map((col) =>
+                    h("th", { key: col.label }, [
+                      h("div", { class: "pace-col" }, [
+                        h("b", null, col.label),
+                        h("small", null, col.paceText),
+                      ]),
+                    ])
+                  ),
+                ]),
+              ]),
+              h(
+                "tbody",
+                null,
+                rows.flatMap((row, rowIndex) => {
+                  const eventRow = h("tr", { key: row.key }, [
+                    h("td", null, [
+                      h("div", { class: "distance" }, [
+                        h("strong", null, row.label),
+                        h("span", null, `${row.km.toFixed(3).replace(/\.?0+$/, "")} km`),
+                      ]),
+                    ]),
+                    ...row.times.map((time, idx) => h("td", { key: `${row.key}-${idx}` }, time)),
+                  ]);
+
+                  if (!showSplits) {
+                    return [eventRow];
+                  }
+
+                  const nextEventKm = EVENTS[rowIndex + 1]?.km;
+                  if (!nextEventKm) {
+                    return [eventRow];
+                  }
+
+                  const splitRows = splitRowsFor(row.km, nextEventKm).map((split, splitIndex) =>
+                    h("tr", { key: `${row.key}-split-${splitIndex}`, class: "checkpoint-row" }, [
+                      h("td", null, [
+                        h("div", { class: "checkpoint-label" }, [
+                          h("b", null, split.label),
+                        ]),
+                      ]),
+                      ...split.times.map((time, timeIndex) =>
+                        h("td", { key: `${row.key}-split-${splitIndex}-${timeIndex}` }, time)
+                      ),
+                    ]),
+                  );
+
+                  return [eventRow, ...splitRows];
+                })
+              ),
+            ]),
+          ]),
+        ]);
+      }
+
+      render(h(App), document.getElementById("app"));
+    </script>
+  </body>
+</html>
