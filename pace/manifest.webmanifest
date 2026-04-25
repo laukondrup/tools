@@ -1,0 +1,17 @@
+{
+  "name": "Pace Table",
+  "short_name": "Pace",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f5f5f1",
+  "theme_color": "#5a6f67",
+  "icons": [
+    {
+      "src": "./favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}
