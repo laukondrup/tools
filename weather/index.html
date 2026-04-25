@@ -479,23 +479,9 @@
         return condition === 'Clear' || condition === 'Fair' ? 'condition-good' : '';
       }
 
-      async function fetchForecast(lat, lon, lastModified) {
+      async function fetchForecast(lat, lon) {
         const url = `https://api.met.no/weatherapi/locationforecast/2.0/complete?lat=${encodeURIComponent(lat)}&lon=${encodeURIComponent(lon)}`;
-        const headers = {};
-        if (lastModified) {
-          headers['If-Modified-Since'] = lastModified;
-        }
-
-        const response = await fetch(url, { headers });
-
-        if (response.status === 304) {
-          return {
-            status: response.status,
-            expires: response.headers.get('Expires') || null,
-            lastModified: response.headers.get('Last-Modified') || lastModified || null,
-            data: null,
-          };
-        }
+        const response = await fetch(url);
 
         if (!response.ok) {
           throw new Error(`Forecast request failed: ${response.status} ${response.statusText}`);
@@ -504,7 +490,6 @@
         return {
           status: response.status,
           expires: response.headers.get('Expires') || null,
-          lastModified: response.headers.get('Last-Modified') || null,
           data: await response.json(),
         };
       }
@@ -571,36 +556,8 @@
 
           setStatus('Loading forecast...');
           try {
-            const response = await fetchForecast(
-              roundedLat,
-              roundedLng,
-              cached?.lastModified || null,
-            );
+            const response = await fetchForecast(roundedLat, roundedLng);
             const expiresAt = response.expires ? Date.parse(response.expires) : NaN;
-
-            if (response.status === 304 && cached?.forecast) {
-              setForecast(cached.forecast);
-              setLocationLabel(label || `${roundedLat.toFixed(4)}, ${roundedLng.toFixed(4)}`);
-              if (Number.isFinite(expiresAt)) {
-                writeCache(roundedLat, roundedLng, {
-                  forecast: cached.forecast,
-                  expiresAt,
-                  lastModified: response.lastModified || cached.lastModified || null,
-                });
-              }
-              if (urlMode === 'coords') {
-                writeCoordsToUrl(roundedLat, roundedLng);
-                writeStateToLocalStorage({ q: '', coords: { lat: roundedLat, lng: roundedLng } });
-              } else {
-                writeStateToLocalStorage({
-                  q: query,
-                  coords: { lat: roundedLat, lng: roundedLng },
-                });
-              }
-              setStatus('Forecast not modified; reused cached data.');
-              setIsLoading(false);
-              return;
-            }
 
             setForecast(response.data);
             setLocationLabel(label || `${roundedLat.toFixed(4)}, ${roundedLng.toFixed(4)}`);
@@ -608,7 +565,6 @@
             writeCache(roundedLat, roundedLng, {
               forecast: response.data,
               expiresAt: Number.isFinite(expiresAt) ? expiresAt : now + 30 * 60 * 1000,
-              lastModified: response.lastModified,
             });
             if (urlMode === 'coords') {
               writeCoordsToUrl(roundedLat, roundedLng);
