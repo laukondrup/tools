@@ -1,0 +1,388 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Weather Forecast</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --bg: #f5f7fb;
+        --panel: #ffffff;
+        --line: #d9e1ef;
+        --text: #1b2430;
+        --muted: #5d6b82;
+        --accent: #0c67d5;
+        --accent-hover: #0958b5;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        background: radial-gradient(circle at top, #eef4ff 0%, var(--bg) 60%);
+        color: var(--text);
+        min-height: 100vh;
+      }
+
+      .container {
+        width: min(1000px, 94vw);
+        margin: 2rem auto;
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        padding: 1.25rem;
+        box-shadow: 0 6px 24px rgba(20, 37, 63, 0.08);
+      }
+
+      h1 {
+        margin: 0;
+        font-size: 1.4rem;
+      }
+
+      .subtitle {
+        margin: 0.35rem 0 0;
+        color: var(--muted);
+        font-size: 0.95rem;
+      }
+
+      .controls {
+        margin-top: 1rem;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.65rem;
+        align-items: center;
+      }
+
+      button {
+        border: 0;
+        border-radius: 10px;
+        padding: 0.6rem 0.9rem;
+        font-size: 0.95rem;
+        cursor: pointer;
+        background: var(--accent);
+        color: #fff;
+      }
+
+      button:hover {
+        background: var(--accent-hover);
+      }
+
+      button:disabled {
+        opacity: 0.55;
+        cursor: not-allowed;
+      }
+
+      .status {
+        margin-top: 0.8rem;
+        color: var(--muted);
+        min-height: 1.3rem;
+      }
+
+      .table-wrap {
+        margin-top: 1rem;
+        overflow-x: auto;
+      }
+
+      table {
+        border-collapse: collapse;
+        width: 100%;
+        min-width: 780px;
+        font-size: 0.9rem;
+      }
+
+      th,
+      td {
+        border: 1px solid var(--line);
+        padding: 0.55rem;
+        text-align: left;
+        vertical-align: top;
+      }
+
+      th {
+        background: #eff4fd;
+        font-weight: 600;
+      }
+
+      .empty {
+        margin-top: 1rem;
+        padding: 1rem;
+        border: 1px dashed var(--line);
+        border-radius: 10px;
+        color: var(--muted);
+      }
+    </style>
+  </head>
+  <body>
+    <div id="app"></div>
+
+    <script type="module">
+      import { h, render } from "https://esm.sh/preact@10.26.6";
+      import { useMemo, useState } from "https://esm.sh/preact@10.26.6/hooks";
+
+      const USER_AGENT = "WeatherTableDemo/1.0 (https://example.com)";
+
+      const symbolMap = {
+        clearsky: "Clear",
+        fair: "Fair",
+        partlycloudy: "Partly Cloudy",
+        cloudy: "Cloudy",
+        rainshowers: "Rain Showers",
+        rainshowersandthunder: "Thunder Showers",
+        sleetshowers: "Sleet Showers",
+        snowshowers: "Snow Showers",
+        rain: "Rain",
+        heavyrain: "Heavy Rain",
+        heavyrainandthunder: "Heavy Rain & Thunder",
+        sleet: "Sleet",
+        snow: "Snow",
+        snowandthunder: "Snow & Thunder",
+        fog: "Fog",
+        sleetshowersandthunder: "Sleet & Thunder",
+        snowshowersandthunder: "Snow & Thunder",
+        rainandthunder: "Rain & Thunder",
+        sleetandthunder: "Sleet & Thunder",
+      };
+
+      function interpretSymbolCode(symbolCode) {
+        const baseCode = String(symbolCode || "").replace(/_day|_night|_polartwilight/g, "");
+        return symbolMap[baseCode] || baseCode || "Unknown";
+      }
+
+      function hasThunder(condition) {
+        return condition.toLowerCase().includes("thunder");
+      }
+
+      function formatDay(dateStr) {
+        return new Date(dateStr + "T00:00:00Z").toLocaleDateString(undefined, {
+          weekday: "short",
+          month: "short",
+          day: "numeric",
+        });
+      }
+
+      function getDateKey(isoTimestamp) {
+        return new Date(isoTimestamp).toISOString().split("T")[0];
+      }
+
+      function summarizeForecast(forecast) {
+        const dailyData = new Map();
+
+        for (const entry of forecast?.properties?.timeseries || []) {
+          const date = getDateKey(entry.time);
+          const temp = entry?.data?.instant?.details?.air_temperature;
+          const wind = entry?.data?.instant?.details?.wind_speed;
+          const gust = entry?.data?.instant?.details?.wind_speed_of_gust;
+
+          if (typeof temp !== "number" || typeof wind !== "number") {
+            continue;
+          }
+
+          if (!dailyData.has(date)) {
+            dailyData.set(date, {
+              temps: [],
+              precipitation: 0,
+              windSpeeds: [],
+              windGusts: [],
+              conditions: new Map(),
+            });
+          }
+
+          const day = dailyData.get(date);
+          day.temps.push(temp);
+          day.windSpeeds.push(wind);
+
+          if (typeof gust === "number") {
+            day.windGusts.push(gust);
+          }
+
+          day.precipitation +=
+            entry?.data?.next_1_hours?.details?.precipitation_amount ??
+            entry?.data?.next_6_hours?.details?.precipitation_amount ??
+            0;
+
+          const symbolCode =
+            entry?.data?.next_12_hours?.summary?.symbol_code ||
+            entry?.data?.next_6_hours?.summary?.symbol_code ||
+            entry?.data?.next_1_hours?.summary?.symbol_code;
+
+          if (symbolCode) {
+            const condition = interpretSymbolCode(symbolCode);
+            day.conditions.set(condition, (day.conditions.get(condition) || 0) + 1);
+          }
+        }
+
+        const summaries = [];
+
+        for (const [date, day] of dailyData.entries()) {
+          let dominantCondition = "Unknown";
+          let maxCount = 0;
+          const conditionSet = new Set();
+
+          for (const [condition, count] of day.conditions.entries()) {
+            conditionSet.add(condition);
+            if (count > maxCount) {
+              maxCount = count;
+              dominantCondition = condition;
+            }
+          }
+
+          summaries.push({
+            date,
+            highTemp: Math.max(...day.temps),
+            lowTemp: Math.min(...day.temps),
+            tempDiff: "",
+            totalPrecipitation: Math.round(day.precipitation * 10) / 10,
+            maxWindSpeed: Math.round(Math.max(...day.windSpeeds) * 10) / 10,
+            maxWindGust:
+              day.windGusts.length > 0
+                ? Math.round(Math.max(...day.windGusts) * 10) / 10
+                : null,
+            conditions: conditionSet,
+            dominantCondition,
+          });
+        }
+
+        summaries.sort((a, b) => a.date.localeCompare(b.date));
+
+        for (let i = 1; i < summaries.length; i += 1) {
+          const diff = Math.round(summaries[i].highTemp - summaries[i - 1].highTemp);
+          summaries[i].tempDiff = diff > 0 ? `+${diff}` : `${diff}`;
+        }
+
+        return summaries;
+      }
+
+      async function fetchForecast(lat, lon) {
+        const url = `https://api.met.no/weatherapi/locationforecast/2.0/complete?lat=${encodeURIComponent(lat)}&lon=${encodeURIComponent(lon)}`;
+        const response = await fetch(url, {
+          headers: {
+            "User-Agent": USER_AGENT,
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error(`Forecast request failed: ${response.status} ${response.statusText}`);
+        }
+
+        return response.json();
+      }
+
+      function App() {
+        const [status, setStatus] = useState("Click \"Use my location\" to load weather.");
+        const [forecast, setForecast] = useState(null);
+        const [locationLabel, setLocationLabel] = useState("");
+        const [isLoading, setIsLoading] = useState(false);
+
+        const dailyRows = useMemo(() => summarizeForecast(forecast), [forecast]);
+
+        async function requestLocationAndLoad() {
+          if (!navigator.geolocation) {
+            setStatus("Geolocation is not supported in this browser.");
+            return;
+          }
+
+          setIsLoading(true);
+          setStatus("Requesting location permission...");
+
+          navigator.geolocation.getCurrentPosition(
+            async (position) => {
+              const { latitude, longitude } = position.coords;
+              setLocationLabel(`${latitude.toFixed(4)}, ${longitude.toFixed(4)}`);
+              setStatus("Loading forecast...");
+
+              try {
+                const data = await fetchForecast(latitude, longitude);
+                setForecast(data);
+                setStatus("Forecast loaded.");
+              } catch (error) {
+                setForecast(null);
+                setStatus(error instanceof Error ? error.message : "Failed to load forecast.");
+              } finally {
+                setIsLoading(false);
+              }
+            },
+            (error) => {
+              const message =
+                error.code === error.PERMISSION_DENIED
+                  ? "Location permission denied. Enable location and try again."
+                  : error.message || "Failed to get your location.";
+              setStatus(message);
+              setIsLoading(false);
+            },
+            {
+              enableHighAccuracy: false,
+              timeout: 10000,
+            }
+          );
+        }
+
+        return h("div", { class: "container" }, [
+          h("h1", null, "Local Weather Forecast"),
+          h(
+            "p",
+            { class: "subtitle" },
+            "This app does not assume your location. Use the button to grant location access and load weather."
+          ),
+          h("div", { class: "controls" }, [
+            h(
+              "button",
+              { onClick: requestLocationAndLoad, disabled: isLoading },
+              isLoading ? "Loading..." : "Use my location"
+            ),
+            locationLabel ? h("span", null, `Coordinates: ${locationLabel}`) : null,
+          ]),
+          h("div", { class: "status" }, status),
+          dailyRows.length
+            ? h("div", { class: "table-wrap" }, [
+                h("table", null, [
+                  h("thead", null, [
+                    h("tr", null, [
+                      h("th", null, "Date"),
+                      h("th", null, "High / Low (°C)"),
+                      h("th", null, "Temp Diff"),
+                      h("th", null, "Rain (mm)"),
+                      h("th", null, "Max Wind (m/s)"),
+                      h("th", null, "Max Gust (m/s)"),
+                      h("th", null, "Conditions"),
+                      h("th", null, "All Conditions"),
+                    ]),
+                  ]),
+                  h(
+                    "tbody",
+                    null,
+                    dailyRows.map((day) => {
+                      const allConditions = Array.from(day.conditions);
+                      return h("tr", { key: day.date }, [
+                        h("td", null, formatDay(day.date)),
+                        h("td", null, `${Math.round(day.highTemp)}° / ${Math.round(day.lowTemp)}°`),
+                        h("td", null, day.tempDiff || "-"),
+                        h("td", null, day.totalPrecipitation || "-"),
+                        h("td", null, day.maxWindSpeed),
+                        h("td", null, day.maxWindGust ?? "-"),
+                        h(
+                          "td",
+                          null,
+                          `${day.dominantCondition}${allConditions.some(hasThunder) ? " ⚡" : ""}`
+                        ),
+                        h("td", null, allConditions.join(", ") || "-"),
+                      ]);
+                    })
+                  ),
+                ]),
+              ])
+            : h(
+                "div",
+                { class: "empty" },
+                "No weather loaded yet. Click the location button to fetch forecast data."
+              ),
+        ]);
+      }
+
+      render(h(App), document.getElementById("app"));
+    </script>
+  </body>
+</html>
