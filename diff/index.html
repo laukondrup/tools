@@ -449,12 +449,39 @@
 
       .unified {
         margin: 0;
-        padding: 0.76rem;
-        white-space: pre-wrap;
-        word-break: break-word;
+        padding: 0;
         font:
           400 0.82rem/1.55 'JetBrains Mono',
           monospace;
+      }
+
+      .diff-lines {
+        width: 100%;
+      }
+
+      .diff-line {
+        display: grid;
+        grid-template-columns: 3.6rem 1fr;
+        border-bottom: 1px solid #242a36;
+      }
+
+      .diff-line:last-child {
+        border-bottom: 0;
+      }
+
+      .diff-line-no {
+        padding: 0.48rem 0.5rem 0.48rem 0.66rem;
+        color: #7d889f;
+        border-right: 1px solid #242a36;
+        text-align: right;
+        user-select: none;
+      }
+
+      .diff-line-body {
+        padding: 0.48rem 0.66rem;
+        white-space: pre-wrap;
+        word-break: break-word;
+        min-height: 1.5rem;
       }
 
       .split {
@@ -488,9 +515,7 @@
 
       .diff-content {
         margin: 0;
-        padding: 0.72rem;
-        white-space: pre-wrap;
-        word-break: break-word;
+        padding: 0;
         font:
           400 0.82rem/1.55 'JetBrains Mono',
           monospace;
@@ -765,6 +790,7 @@
           diffMode: ['word', 'char', 'line'].includes(query.get('mode'))
             ? query.get('mode')
             : 'word',
+          ignoreWhitespace: query.get('ws') === '1',
           originalLanguageSelection: query.get('olang') || 'auto',
           comparisonLanguageSelection: query.get('clang') || 'auto',
           originalText:
@@ -871,10 +897,13 @@
         return DECODER.decode(bytes);
       }
 
-      function buildParts(a, b, mode) {
+      function buildParts(a, b, mode, ignoreWhitespace) {
         if (mode === 'char') return Diff.diffChars(a, b);
         if (mode === 'line') {
-          return Diff.diffLines(a, b, { newlineIsToken: true });
+          return Diff.diffLines(a, b, { newlineIsToken: true, ignoreWhitespace });
+        }
+        if (ignoreWhitespace) {
+          return Diff.diffWords(a, b, { ignoreWhitespace: true });
         }
         return Diff.diffWordsWithSpace(a, b);
       }
@@ -893,6 +922,59 @@
         return escapeHtml(text).replaceAll('\n', '<br />');
       }
 
+      function buildLineRows(parts, side = 'unified') {
+        const rows = [[]];
+
+        for (const part of parts) {
+          if (side === 'left' && part.added) continue;
+          if (side === 'right' && part.removed) continue;
+
+          const type = part.added ? 'add' : part.removed ? 'remove' : 'same';
+          const chunks = String(part.value).split('\n');
+
+          for (let i = 0; i < chunks.length; i += 1) {
+            const chunk = chunks[i];
+            if (chunk.length > 0) {
+              rows[rows.length - 1].push({ type, text: chunk });
+            }
+            if (i < chunks.length - 1) {
+              rows.push([]);
+            }
+          }
+        }
+
+        if (rows.length > 1 && rows[rows.length - 1].length === 0) {
+          rows.pop();
+        }
+
+        return rows;
+      }
+
+      function LineRows({ rows, rowPrefix }) {
+        return h(
+          'div',
+          { class: 'diff-lines' },
+          rows.map((segments, idx) =>
+            h('div', { class: 'diff-line', key: `${rowPrefix}-${idx}` }, [
+              h('span', { class: 'diff-line-no' }, String(idx + 1)),
+              h(
+                'span',
+                { class: 'diff-line-body' },
+                segments.length > 0
+                  ? segments.map((segment, segIdx) =>
+                      h(
+                        'span',
+                        { class: `segment ${segment.type}`, key: `${rowPrefix}-${idx}-${segIdx}` },
+                        segment.text,
+                      ),
+                    )
+                  : h('span', { class: 'segment same' }, '\u00a0'),
+              ),
+            ]),
+          ),
+        );
+      }
+
       function UnifiedDiff({ parts }) {
         if (!parts.length) {
           return h(
@@ -902,18 +984,8 @@
           );
         }
 
-        return h(
-          'pre',
-          { class: 'unified' },
-          parts.map((part, idx) => {
-            const type = part.added ? 'add' : part.removed ? 'remove' : 'same';
-            return h('span', {
-              key: `${idx}-${type}`,
-              class: `segment ${type}`,
-              dangerouslySetInnerHTML: { __html: renderDiffHtml(part.value) },
-            });
-          }),
-        );
+        const rows = buildLineRows(parts, 'unified');
+        return h('div', { class: 'unified' }, h(LineRows, { rows, rowPrefix: 'u' }));
       }
 
       function SplitDiff({
@@ -945,16 +1017,7 @@
             h(
               'pre',
               { class: 'diff-content' },
-              parts
-                .filter((part) => !part.added)
-                .map((part, idx) => {
-                  const type = part.removed ? 'remove' : 'same';
-                  return h('span', {
-                    key: `l-${idx}-${type}`,
-                    class: `segment ${type}`,
-                    dangerouslySetInnerHTML: { __html: renderDiffHtml(part.value) },
-                  });
-                }),
+              h(LineRows, { rows: buildLineRows(parts, 'left'), rowPrefix: 'l' }),
             ),
           ]),
           h('div', { class: 'diff-pane', key: 'right' }, [
@@ -970,19 +1033,29 @@
             h(
               'pre',
               { class: 'diff-content' },
-              parts
-                .filter((part) => !part.removed)
-                .map((part, idx) => {
-                  const type = part.added ? 'add' : 'same';
-                  return h('span', {
-                    key: `r-${idx}-${type}`,
-                    class: `segment ${type}`,
-                    dangerouslySetInnerHTML: { __html: renderDiffHtml(part.value) },
-                  });
-                }),
+              h(LineRows, { rows: buildLineRows(parts, 'right'), rowPrefix: 'r' }),
             ),
           ]),
         ]);
+      }
+
+      function CopyIcon() {
+        return h(
+          'svg',
+          {
+            viewBox: '0 0 24 24',
+            fill: 'none',
+            stroke: 'currentColor',
+            'stroke-width': '1.8',
+            'stroke-linecap': 'round',
+            'stroke-linejoin': 'round',
+            'aria-hidden': 'true',
+          },
+          [
+            h('rect', { x: '9', y: '9', width: '11', height: '11', rx: '2' }),
+            h('path', { d: 'M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1' }),
+          ],
+        );
       }
 
       function PencilIcon() {
@@ -1235,6 +1308,7 @@
         const [bottomFileMeta, setBottomFileMeta] = useState(null);
         const [viewMode, setViewMode] = useState(initialState.viewMode);
         const [diffMode, setDiffMode] = useState(initialState.diffMode);
+        const [ignoreWhitespace, setIgnoreWhitespace] = useState(initialState.ignoreWhitespace);
         const [topLanguageSelection, setTopLanguageSelection] = useState(
           initialState.originalLanguageSelection,
         );
@@ -1247,6 +1321,7 @@
         const [statusError, setStatusError] = useState(false);
         const [topDropTarget, setTopDropTarget] = useState(false);
         const [bottomDropTarget, setBottomDropTarget] = useState(false);
+        const [copyState, setCopyState] = useState('idle');
 
         const topLanguage = useMemo(
           () => chooseLanguage(topLanguageSelection, topFileMeta?.name, topText),
@@ -1259,8 +1334,8 @@
         );
 
         const parts = useMemo(
-          () => buildParts(topText, bottomText, diffMode),
-          [topText, bottomText, diffMode],
+          () => buildParts(topText, bottomText, diffMode, ignoreWhitespace),
+          [topText, bottomText, diffMode, ignoreWhitespace],
         );
 
         const changeStats = useMemo(() => {
@@ -1283,6 +1358,7 @@
           if (comparisonLabel.trim()) params.set('comparison', comparisonLabel.trim());
           params.set('view', viewMode);
           params.set('mode', diffMode);
+          if (ignoreWhitespace) params.set('ws', '1');
           params.set('olang', topLanguageSelection);
           params.set('clang', bottomLanguageSelection);
 
@@ -1303,6 +1379,7 @@
           comparisonLabel,
           viewMode,
           diffMode,
+          ignoreWhitespace,
           topLanguageSelection,
           bottomLanguageSelection,
           topText,
@@ -1331,6 +1408,17 @@
           setBottomLanguageSelection('auto');
           setStatusError(false);
           setStatusMessage('Cleared both inputs.');
+        }
+
+        async function copyUrlToClipboard() {
+          try {
+            await navigator.clipboard.writeText(window.location.href);
+            setCopyState('copied');
+            window.setTimeout(() => setCopyState('idle'), 1200);
+          } catch {
+            setCopyState('error');
+            window.setTimeout(() => setCopyState('idle'), 1500);
+          }
         }
 
         return h('main', { class: 'shell' }, [
@@ -1397,6 +1485,17 @@
                   ),
                 ]),
                 h('div', { class: 'diff-context-controls' }, [
+                  h('div', { class: 'control-toggle', role: 'group', 'aria-label': 'Whitespace' }, [
+                    h('label', null, [
+                      h('input', {
+                        type: 'checkbox',
+                        name: 'ignore-whitespace',
+                        checked: ignoreWhitespace,
+                        onChange: (event) => setIgnoreWhitespace(event.currentTarget.checked),
+                      }),
+                      h('span', { class: 'control-option' }, 'Ignore WS'),
+                    ]),
+                  ]),
                   h(
                     'div',
                     { class: 'control-toggle', role: 'radiogroup', 'aria-label': 'Layout' },
@@ -1458,6 +1557,22 @@
                         h('span', { class: 'control-option' }, 'Line'),
                       ]),
                     ],
+                  ),
+                  h(
+                    'button',
+                    {
+                      type: 'button',
+                      class: 'icon-edit',
+                      onClick: copyUrlToClipboard,
+                      title:
+                        copyState === 'copied'
+                          ? 'Copied'
+                          : copyState === 'error'
+                            ? 'Copy failed'
+                            : 'Copy URL',
+                      'aria-label': 'Copy URL',
+                    },
+                    h(CopyIcon),
                   ),
                   h(
                     'button',
