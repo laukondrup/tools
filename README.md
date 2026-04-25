@@ -5,6 +5,7 @@ Inspired by https://github.com/simonw/tools
 ## Index
 
 <!-- tools-index:start -->
-- [Pace Table](pace.html) (`pace.html`)
-- [Weather Forecast](weather.html) (`weather.html`)
+- [Pace Table](pace/) (`pace/index.html`)
+- [Center Key Type Tester](type-tester/) (`type-tester/index.html`)
+- [Weather Forecast](weather/) (`weather/index.html`)
 <!-- tools-index:end -->

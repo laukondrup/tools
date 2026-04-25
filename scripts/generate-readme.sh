@@ -4,7 +4,13 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT_DIR"
 
-mapfile -t tools < <(find . -maxdepth 1 -type f -name "*.html" -print | sed 's|^\./||' | grep -v '^index\.html$' | sort)
+mapfile -t tools < <(
+  find . -mindepth 2 -maxdepth 2 -type f -name "index.html" \
+    ! -path "./.*/index.html" \
+    ! -path "./_site/*" \
+    ! -path "./_*/index.html" \
+    -print | sort
+)
 
 START_MARKER="<!-- tools-index:start -->"
 END_MARKER="<!-- tools-index:end -->"
@@ -17,11 +23,14 @@ TMP_README="$(mktemp)"
     echo "_No tools found._"
   else
     for file in "${tools[@]}"; do
+      rel_path="${file#./}"
+      tool_dir="$(dirname "$rel_path")"
+      link_path="${tool_dir}/"
       title="$(sed -n 's|.*<title>\(.*\)</title>.*|\1|p' "$file" | head -n1)"
       if [ -z "$title" ]; then
-        title="${file%.html}"
+        title="$(basename "$tool_dir")"
       fi
-      printf -- "- [%s](%s) (\`%s\`)\n" "$title" "$file" "$file"
+      printf -- "- [%s](%s) (\`%s\`)\n" "$title" "$link_path" "$rel_path"
     done
   fi
   echo "$END_MARKER"

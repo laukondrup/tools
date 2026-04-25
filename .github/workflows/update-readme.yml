@@ -4,7 +4,8 @@ on:
   push:
     branches: ["main"]
     paths:
-      - "*.html"
+      - "**/index.html"
+      - "**/*.html"
       - "scripts/generate-readme.sh"
       - ".github/workflows/update-readme.yml"
       - ".github/workflows/static.yml"
