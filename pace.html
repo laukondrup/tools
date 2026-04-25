@@ -7,7 +7,7 @@
     <link
       rel="icon"
       type="image/svg+xml"
-      href='data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"%3E%3Crect width="64" height="64" rx="12" fill="%2311110f"/%3E%3Cpath d="M18 44h8V20h-8zm10 0h8V14h-8zm10 0h8V26h-8z" fill="%23fffef8"/%3E%3C/svg%3E'
+      href="./favicon.svg"
     />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -256,6 +256,7 @@
 
       const DELTAS = [-15, -10, -5, 0, 5, 10, 15];
       const KM_TO_MILE = 0.621371;
+      const PACE_STATE_KEY = "pace-state-v1";
 
       function parseIntOr(value, fallback) {
         const parsed = Number.parseInt(String(value), 10);
@@ -290,11 +291,39 @@
         const unitParam = params.get("unit");
         const splitsParam = params.get("splits");
         const pace = normalizePace(params.get("min") ?? 5, params.get("sec") ?? 40);
+        const hasExplicitState =
+          params.has("min") || params.has("sec") || params.has("unit") || params.has("splits");
         return {
-          pace,
-          unit: unitParam === "mi" ? "mi" : "km",
-          showSplits: splitsParam === "1",
+          hasExplicitState,
+          state: {
+            pace,
+            unit: unitParam === "mi" ? "mi" : "km",
+            showSplits: splitsParam === "1",
+          },
         };
+      }
+
+      function readStateFromLocalStorage() {
+        try {
+          const raw = localStorage.getItem(PACE_STATE_KEY);
+          if (!raw) return null;
+          const parsed = JSON.parse(raw);
+          if (!parsed || typeof parsed !== "object") return null;
+
+          return {
+            pace: normalizePace(parsed?.pace?.min ?? 5, parsed?.pace?.sec ?? 40),
+            unit: parsed.unit === "mi" ? "mi" : "km",
+            showSplits: parsed.showSplits === true,
+          };
+        } catch {
+          return null;
+        }
+      }
+
+      function writeStateToLocalStorage(state) {
+        try {
+          localStorage.setItem(PACE_STATE_KEY, JSON.stringify(state));
+        } catch {}
       }
 
       function formatPace(secondsPerUnit) {
@@ -320,7 +349,11 @@
       }
 
       function App() {
-        const initialState = useMemo(() => readStateFromUrl(), []);
+        const initialState = useMemo(() => {
+          const { hasExplicitState, state: urlState } = readStateFromUrl();
+          if (hasExplicitState) return urlState;
+          return readStateFromLocalStorage() || urlState;
+        }, []);
         const [pace, setPace] = useState(initialState.pace);
         const [unit, setUnit] = useState(initialState.unit);
         const [showSplits, setShowSplits] = useState(initialState.showSplits);
@@ -362,6 +395,7 @@
           }
 
           window.history.replaceState(null, "", url.toString());
+          writeStateToLocalStorage({ pace, unit, showSplits });
         }, [pace.min, pace.sec, unit, showSplits]);
 
         function splitRowsFor(rangeStartKm, rangeEndKm) {
