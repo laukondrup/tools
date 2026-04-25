@@ -350,10 +350,17 @@
 
         useEffect(() => {
           const url = new URL(window.location.href);
+          url.search = "";
+
           url.searchParams.set("min", String(pace.min));
           url.searchParams.set("sec", String(pace.sec));
-          url.searchParams.set("unit", unit);
-          url.searchParams.set("splits", showSplits ? "1" : "0");
+          if (unit !== "km") {
+            url.searchParams.set("unit", unit);
+          }
+          if (showSplits) {
+            url.searchParams.set("splits", "1");
+          }
+
           window.history.replaceState(null, "", url.toString());
         }, [pace.min, pace.sec, unit, showSplits]);
 
