@@ -93,14 +93,59 @@
         z-index: 1;
       }
 
-      .tagline {
-        margin: 0.5rem 0 0;
-        color: var(--muted);
-        max-width: 68ch;
-        font-size: 0.8rem;
-        line-height: 1.45;
+      .title-row {
+        display: inline-flex;
+        gap: 0.42rem;
+        align-items: center;
         position: relative;
         z-index: 1;
+      }
+
+      .editable-content {
+        outline: none;
+        border-radius: 8px;
+        padding: 0.05rem 0.2rem 0.08rem;
+      }
+
+      .editable-content.is-editing {
+        box-shadow: 0 0 0 1px var(--accent);
+        background: rgba(90, 200, 250, 0.06);
+      }
+
+      .editable-content.is-title {
+        min-width: 7ch;
+      }
+
+      .description-block {
+        padding: 0.6rem 1.15rem 0.8rem;
+        border-bottom: 1px solid var(--line);
+        background: rgba(14, 18, 26, 0.38);
+      }
+
+      .description-input {
+        margin: 0;
+        width: 100%;
+        min-height: 2.3rem;
+        border: 1px solid rgba(65, 73, 92, 0.5);
+        background: rgba(16, 21, 30, 0.46);
+        color: var(--muted);
+        border-radius: 10px;
+        padding: 0.45rem 0.55rem;
+        resize: vertical;
+        outline: none;
+        font:
+          400 0.76rem/1.4 'JetBrains Mono',
+          monospace;
+        position: relative;
+        z-index: 1;
+      }
+
+      .description-input::placeholder {
+        color: #7f8aa3;
+      }
+
+      .description-input:focus-visible {
+        border-color: rgba(90, 200, 250, 0.56);
       }
 
       .toolbar {
@@ -118,11 +163,57 @@
         gap: 0.2rem;
       }
 
-      .control label {
+      .control > label {
         font-size: 0.62rem;
         text-transform: uppercase;
         letter-spacing: 0.08em;
         color: var(--muted);
+      }
+
+      .control-toggle {
+        display: inline-flex;
+        gap: 0.24rem;
+        padding: 0.2rem;
+        border: 1px solid var(--line-strong);
+        border-radius: 10px;
+        background: #161b25;
+      }
+
+      .control-toggle input {
+        position: absolute;
+        opacity: 0;
+        pointer-events: none;
+      }
+
+      .control-toggle label {
+        margin: 0;
+        display: inline-flex;
+      }
+
+      .control-option {
+        border: 1px solid transparent;
+        color: var(--muted);
+        border-radius: 8px;
+        padding: 0.34rem 0.52rem;
+        font:
+          500 0.75rem/1 'JetBrains Mono',
+          monospace;
+        cursor: pointer;
+        user-select: none;
+        transition:
+          border-color 120ms ease,
+          color 120ms ease,
+          background 120ms ease;
+      }
+
+      .control-option:hover {
+        color: var(--text);
+      }
+
+      .control-toggle input:checked + .control-option {
+        border-color: var(--accent);
+        color: var(--text);
+        background: rgba(90, 200, 250, 0.12);
       }
 
       select,
@@ -151,19 +242,10 @@
         border-color: #ff8686;
       }
 
-      .token-stats {
-        margin-left: auto;
-        font-size: 0.73rem;
-        border: 1px solid var(--line);
-        background: #161922;
-        border-radius: 999px;
-        padding: 0.28rem 0.62rem;
-        color: var(--muted);
-      }
-
       .inputs {
         padding: 0.8rem 1.15rem 0.95rem;
         display: grid;
+        grid-template-columns: 1fr 1fr;
         gap: 0.72rem;
         border-bottom: 1px solid var(--line);
       }
@@ -217,6 +299,35 @@
         gap: 0.35rem;
         font-size: 0.74rem;
         color: var(--muted);
+      }
+
+      .pane-title-wrap {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.28rem;
+      }
+
+      .icon-edit {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 1.3rem;
+        height: 1.3rem;
+        padding: 0;
+        border-radius: 8px;
+        border: 1px solid rgba(65, 73, 92, 0.66);
+        background: rgba(20, 24, 32, 0.72);
+        color: #a9b4cb;
+      }
+
+      .icon-edit:hover {
+        color: var(--text);
+        border-color: var(--accent);
+      }
+
+      .icon-edit svg {
+        width: 0.82rem;
+        height: 0.82rem;
       }
 
       .editor-wrap {
@@ -288,6 +399,47 @@
         overflow: hidden;
       }
 
+      .diff-context {
+        padding: 0.45rem 0.62rem;
+        border-bottom: 1px solid var(--line);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 0.5rem;
+        background: rgba(17, 23, 34, 0.7);
+        flex-wrap: wrap;
+      }
+
+      .diff-context-left {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+        flex-wrap: wrap;
+      }
+
+      .diff-context-controls {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+        flex-wrap: wrap;
+      }
+
+      .diff-context-title {
+        font-size: 0.66rem;
+        letter-spacing: 0.07em;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+
+      .diff-context-stats {
+        font-size: 0.74rem;
+        border: 1px solid var(--line);
+        background: #161922;
+        border-radius: 999px;
+        padding: 0.23rem 0.57rem;
+        color: var(--muted);
+      }
+
       .diff-empty {
         margin: 0;
         padding: 1rem;
@@ -319,12 +471,19 @@
       }
 
       .diff-head {
-        padding: 0.48rem 0.66rem;
+        padding: 0.48rem 0.6rem;
         border-bottom: 1px solid var(--line);
+        color: var(--muted);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.5rem;
+      }
+
+      .diff-head-label {
         font-size: 0.66rem;
         letter-spacing: 0.08em;
         text-transform: uppercase;
-        color: var(--muted);
       }
 
       .diff-content {
@@ -444,6 +603,10 @@
       }
 
       @media (max-width: 1024px) {
+        .inputs {
+          grid-template-columns: 1fr;
+        }
+
         .split {
           grid-template-columns: 1fr;
         }
@@ -476,6 +639,10 @@
         .hero::after {
           display: none;
         }
+
+        .description-input {
+          width: 100%;
+        }
       }
     </style>
   </head>
@@ -498,7 +665,7 @@
 
     <script type="module">
       import { h, render } from 'https://esm.sh/preact@10.26.6';
-      import { useMemo, useRef, useState } from 'https://esm.sh/preact@10.26.6/hooks';
+      import { useEffect, useMemo, useRef, useState } from 'https://esm.sh/preact@10.26.6/hooks';
       import * as Diff from 'https://esm.sh/diff@7.0.0';
 
       const LANGUAGE_OPTIONS = [
@@ -545,12 +712,66 @@
       };
 
       const DECODER = new TextDecoder('utf-8', { fatal: false });
+      const ENCODER = new TextEncoder();
 
       function bytesLabel(bytes) {
         if (!Number.isFinite(bytes) || bytes < 0) return 'unknown size';
         if (bytes < 1024) return `${bytes} B`;
         if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
         return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
+      }
+
+      function toBase64Url(text) {
+        const bytes = ENCODER.encode(text);
+        let binary = '';
+        for (let i = 0; i < bytes.length; i += 1) {
+          binary += String.fromCharCode(bytes[i]);
+        }
+        return btoa(binary).replaceAll('+', '-').replaceAll('/', '_').replace(/=+$/g, '');
+      }
+
+      function fromBase64Url(encoded) {
+        if (!encoded) return '';
+        const padded = encoded.replaceAll('-', '+').replaceAll('_', '/');
+        const withPadding = `${padded}${'='.repeat((4 - (padded.length % 4)) % 4)}`;
+        const binary = atob(withPadding);
+        const bytes = new Uint8Array(binary.length);
+        for (let i = 0; i < binary.length; i += 1) {
+          bytes[i] = binary.charCodeAt(i);
+        }
+        return DECODER.decode(bytes);
+      }
+
+      function getInitialStateFromUrl() {
+        const query = new URLSearchParams(window.location.search);
+        const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ''));
+        let diffPayload = { originalText: '', comparisonText: '' };
+
+        try {
+          const rawDiff = hashParams.get('diff');
+          if (rawDiff) {
+            diffPayload = JSON.parse(fromBase64Url(rawDiff));
+          }
+        } catch {
+          diffPayload = { originalText: '', comparisonText: '' };
+        }
+
+        return {
+          title: query.get('title') || '',
+          description: query.get('description') || '',
+          originalLabel: query.get('original') || '',
+          comparisonLabel: query.get('comparison') || '',
+          viewMode: query.get('view') === 'unified' ? 'unified' : 'split',
+          diffMode: ['word', 'char', 'line'].includes(query.get('mode'))
+            ? query.get('mode')
+            : 'word',
+          originalLanguageSelection: query.get('olang') || 'auto',
+          comparisonLanguageSelection: query.get('clang') || 'auto',
+          originalText:
+            typeof diffPayload.originalText === 'string' ? diffPayload.originalText : '',
+          comparisonText:
+            typeof diffPayload.comparisonText === 'string' ? diffPayload.comparisonText : '',
+        };
       }
 
       function escapeHtml(value) {
@@ -652,7 +873,20 @@
 
       function buildParts(a, b, mode) {
         if (mode === 'char') return Diff.diffChars(a, b);
+        if (mode === 'line') {
+          return Diff.diffLines(a, b, { newlineIsToken: true });
+        }
         return Diff.diffWordsWithSpace(a, b);
+      }
+
+      function partCount(part, mode) {
+        if (typeof part.count === 'number') return part.count;
+        if (mode === 'line') {
+          if (!part.value) return 0;
+          const lines = part.value.split('\n').length;
+          return part.value.endsWith('\n') ? lines - 1 : lines;
+        }
+        return part.value.length;
       }
 
       function renderDiffHtml(text) {
@@ -682,7 +916,13 @@
         );
       }
 
-      function SplitDiff({ parts }) {
+      function SplitDiff({
+        parts,
+        originalLabel,
+        comparisonLabel,
+        onSaveOriginal,
+        onSaveComparison,
+      }) {
         if (!parts.length) {
           return h(
             'p',
@@ -693,7 +933,15 @@
 
         return h('div', { class: 'split' }, [
           h('div', { class: 'diff-pane', key: 'left' }, [
-            h('div', { class: 'diff-head' }, 'Top input'),
+            h('div', { class: 'diff-head' }, [
+              h(EditableText, {
+                value: originalLabel,
+                onSave: onSaveOriginal,
+                fallbackValue: 'Original',
+                className: 'diff-head-label',
+                editButtonTitle: `Edit ${originalLabel}`,
+              }),
+            ]),
             h(
               'pre',
               { class: 'diff-content' },
@@ -710,7 +958,15 @@
             ),
           ]),
           h('div', { class: 'diff-pane', key: 'right' }, [
-            h('div', { class: 'diff-head' }, 'Bottom input'),
+            h('div', { class: 'diff-head' }, [
+              h(EditableText, {
+                value: comparisonLabel,
+                onSave: onSaveComparison,
+                fallbackValue: 'Comparison',
+                className: 'diff-head-label',
+                editButtonTitle: `Edit ${comparisonLabel}`,
+              }),
+            ]),
             h(
               'pre',
               { class: 'diff-content' },
@@ -729,6 +985,97 @@
         ]);
       }
 
+      function PencilIcon() {
+        return h(
+          'svg',
+          {
+            viewBox: '0 0 24 24',
+            fill: 'none',
+            stroke: 'currentColor',
+            'stroke-width': '1.8',
+            'stroke-linecap': 'round',
+            'stroke-linejoin': 'round',
+            'aria-hidden': 'true',
+          },
+          [
+            h('path', {
+              d: 'M16.862 4.487l1.688-1.688a1.875 1.875 0 112.651 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931z',
+            }),
+            h('path', { d: 'M19.5 7.125L16.875 4.5' }),
+          ],
+        );
+      }
+
+      function EditableText({
+        value,
+        onSave,
+        fallbackValue,
+        className,
+        editButtonTitle,
+        element = 'span',
+      }) {
+        const [isEditing, setIsEditing] = useState(false);
+        const contentRef = useRef(null);
+
+        useEffect(() => {
+          if (isEditing || !contentRef.current) return;
+          contentRef.current.textContent = value || fallbackValue;
+        }, [value, fallbackValue, isEditing]);
+
+        useEffect(() => {
+          if (!isEditing || !contentRef.current) return;
+          contentRef.current.textContent = value || fallbackValue;
+          contentRef.current.focus();
+          const range = document.createRange();
+          range.selectNodeContents(contentRef.current);
+          range.collapse(false);
+          const selection = window.getSelection();
+          selection?.removeAllRanges();
+          selection?.addRange(range);
+        }, [isEditing, value, fallbackValue]);
+
+        const Tag = element;
+
+        function finishEditing() {
+          const nextRaw = contentRef.current?.textContent || '';
+          const nextValue = nextRaw.trim();
+          setIsEditing(false);
+          onSave(nextValue);
+        }
+
+        return h('span', { class: className }, [
+          h(
+            Tag,
+            {
+              ref: contentRef,
+              class: `editable-content${isEditing ? ' is-editing' : ''}${element === 'h1' ? ' is-title' : ''}`,
+              contentEditable: isEditing,
+              spellCheck: false,
+              suppressContentEditableWarning: true,
+              onBlur: finishEditing,
+              onKeyDown: (event) => {
+                if (event.key === 'Enter') {
+                  event.preventDefault();
+                  event.currentTarget.blur();
+                }
+              },
+            },
+            value || fallbackValue,
+          ),
+          h(
+            'button',
+            {
+              type: 'button',
+              class: 'icon-edit',
+              onClick: () => setIsEditing(true),
+              title: editButtonTitle,
+              'aria-label': editButtonTitle,
+            },
+            h(PencilIcon),
+          ),
+        ]);
+      }
+
       function InputPane({
         title,
         text,
@@ -741,6 +1088,7 @@
         onLoadFile,
         isDropTarget,
         setDropTarget,
+        onSaveTitle,
       }) {
         const fileInputRef = useRef(null);
         const scrollRef = useRef(null);
@@ -782,16 +1130,6 @@
           highlightRef.current.scrollLeft = textareaRef.current.scrollLeft;
         }
 
-        async function pasteFromClipboard() {
-          try {
-            const value = await navigator.clipboard.readText();
-            setText(value);
-            setFileMeta({ name: 'clipboard.txt', size: value.length, source: 'clipboard' });
-          } catch {
-            // Clipboard API may be restricted by browser settings.
-          }
-        }
-
         function onTextareaPaste(event) {
           const item = Array.from(event.clipboardData?.items || []).find(
             (entry) => entry.kind === 'file',
@@ -813,7 +1151,14 @@
           },
           [
             h('div', { class: 'pane-head', key: 'head' }, [
-              h('p', { class: 'pane-title' }, title),
+              h(EditableText, {
+                value: title,
+                onSave: onSaveTitle,
+                fallbackValue: 'Untitled',
+                className: 'pane-title-wrap',
+                editButtonTitle: `Edit ${title}`,
+                element: 'p',
+              }),
               fileMeta
                 ? h(
                     'span',
@@ -834,16 +1179,6 @@
                   onClick: () => fileInputRef.current?.click(),
                 },
                 'Import file',
-              ),
-              h(
-                'button',
-                {
-                  type: 'button',
-                  onClick: () => {
-                    void pasteFromClipboard();
-                  },
-                },
-                'Paste from clipboard',
               ),
               h('input', {
                 type: 'file',
@@ -889,14 +1224,23 @@
       }
 
       function App() {
-        const [topText, setTopText] = useState('');
-        const [bottomText, setBottomText] = useState('');
+        const initialState = useMemo(() => getInitialStateFromUrl(), []);
+        const [title, setTitle] = useState(initialState.title);
+        const [description, setDescription] = useState(initialState.description);
+        const [originalLabel, setOriginalLabel] = useState(initialState.originalLabel);
+        const [comparisonLabel, setComparisonLabel] = useState(initialState.comparisonLabel);
+        const [topText, setTopText] = useState(initialState.originalText);
+        const [bottomText, setBottomText] = useState(initialState.comparisonText);
         const [topFileMeta, setTopFileMeta] = useState(null);
         const [bottomFileMeta, setBottomFileMeta] = useState(null);
-        const [viewMode, setViewMode] = useState('unified');
-        const [diffMode, setDiffMode] = useState('word');
-        const [topLanguageSelection, setTopLanguageSelection] = useState('auto');
-        const [bottomLanguageSelection, setBottomLanguageSelection] = useState('auto');
+        const [viewMode, setViewMode] = useState(initialState.viewMode);
+        const [diffMode, setDiffMode] = useState(initialState.diffMode);
+        const [topLanguageSelection, setTopLanguageSelection] = useState(
+          initialState.originalLanguageSelection,
+        );
+        const [bottomLanguageSelection, setBottomLanguageSelection] = useState(
+          initialState.comparisonLanguageSelection,
+        );
         const [statusMessage, setStatusMessage] = useState(
           'Ready. Paste or drop files directly in each input pane.',
         );
@@ -923,11 +1267,47 @@
           let additions = 0;
           let removals = 0;
           for (const part of parts) {
-            if (part.added) additions += part.count ?? part.value.length;
-            if (part.removed) removals += part.count ?? part.value.length;
+            if (part.added) additions += partCount(part, diffMode);
+            if (part.removed) removals += partCount(part, diffMode);
           }
           return { additions, removals };
-        }, [parts]);
+        }, [parts, diffMode]);
+
+        const statUnit = diffMode === 'line' ? 'lines' : diffMode === 'char' ? 'chars' : 'tokens';
+
+        useEffect(() => {
+          const params = new URLSearchParams();
+          if (title.trim()) params.set('title', title.trim());
+          if (description.trim()) params.set('description', description.trim());
+          if (originalLabel.trim()) params.set('original', originalLabel.trim());
+          if (comparisonLabel.trim()) params.set('comparison', comparisonLabel.trim());
+          params.set('view', viewMode);
+          params.set('mode', diffMode);
+          params.set('olang', topLanguageSelection);
+          params.set('clang', bottomLanguageSelection);
+
+          const diffPayload = toBase64Url(
+            JSON.stringify({
+              originalText: topText,
+              comparisonText: bottomText,
+            }),
+          );
+
+          const query = params.toString();
+          const nextUrl = `${window.location.pathname}${query ? `?${query}` : ''}#diff=${diffPayload}`;
+          window.history.replaceState(null, '', nextUrl);
+        }, [
+          title,
+          description,
+          originalLabel,
+          comparisonLabel,
+          viewMode,
+          diffMode,
+          topLanguageSelection,
+          bottomLanguageSelection,
+          topText,
+          bottomText,
+        ]);
 
         async function onLoadFile(file, setText, setFileMeta) {
           try {
@@ -955,57 +1335,28 @@
 
         return h('main', { class: 'shell' }, [
           h('header', { class: 'hero', key: 'hero' }, [
-            h('h1', null, 'Diff Forge'),
-            h(
-              'p',
-              { class: 'tagline' },
-              'Input-first diff workstation: syntax-highlighted editors on top, plain high-contrast diff output below.',
-            ),
+            h('div', { class: 'title-row' }, [
+              h(EditableText, {
+                value: title || 'Diff Forge',
+                onSave: setTitle,
+                fallbackValue: 'Diff Forge',
+                className: 'title-editable',
+                editButtonTitle: 'Edit title',
+                element: 'h1',
+              }),
+            ]),
           ]),
-          h('div', { class: 'toolbar', key: 'toolbar' }, [
-            h('div', { class: 'control' }, [
-              h('label', null, 'Layout'),
-              h(
-                'select',
-                {
-                  value: viewMode,
-                  onChange: (event) => setViewMode(event.currentTarget.value),
-                },
-                [
-                  h('option', { value: 'unified' }, 'Unified'),
-                  h('option', { value: 'split' }, 'Split'),
-                ],
-              ),
-            ]),
-            h('div', { class: 'control' }, [
-              h('label', null, 'Diff mode'),
-              h(
-                'select',
-                {
-                  value: diffMode,
-                  onChange: (event) => setDiffMode(event.currentTarget.value),
-                },
-                [h('option', { value: 'word' }, 'Word'), h('option', { value: 'char' }, 'Char')],
-              ),
-            ]),
-            h(
-              'button',
-              {
-                type: 'button',
-                class: 'danger',
-                onClick: clearAll,
-              },
-              'Clear',
-            ),
-            h(
-              'span',
-              { class: 'token-stats' },
-              `+${changeStats.additions} / -${changeStats.removals} tokens`,
-            ),
+          h('section', { class: 'description-block', key: 'description' }, [
+            h('textarea', {
+              class: 'description-input',
+              value: description,
+              placeholder: 'Description...',
+              onInput: (event) => setDescription(event.currentTarget.value),
+            }),
           ]),
           h('section', { class: 'inputs', key: 'inputs' }, [
             h(InputPane, {
-              title: 'Top input',
+              title: originalLabel || 'Original',
               text: topText,
               setText: setTopText,
               fileMeta: topFileMeta,
@@ -1016,9 +1367,10 @@
               onLoadFile,
               isDropTarget: topDropTarget,
               setDropTarget: setTopDropTarget,
+              onSaveTitle: (next) => setOriginalLabel(next),
             }),
             h(InputPane, {
-              title: 'Bottom input',
+              title: comparisonLabel || 'Comparison',
               text: bottomText,
               setText: setBottomText,
               fileMeta: bottomFileMeta,
@@ -1029,20 +1381,110 @@
               onLoadFile,
               isDropTarget: bottomDropTarget,
               setDropTarget: setBottomDropTarget,
+              onSaveTitle: (next) => setComparisonLabel(next),
             }),
           ]),
           h('div', { class: `status${statusError ? ' error' : ''}`, key: 'status' }, statusMessage),
           h('section', { class: 'diff-zone', key: 'diff' }, [
-            h(
-              'div',
-              { class: 'diff-surface' },
-              viewMode === 'split' ? h(SplitDiff, { parts }) : h(UnifiedDiff, { parts }),
-            ),
+            h('div', { class: 'diff-surface' }, [
+              h('div', { class: 'diff-context' }, [
+                h('div', { class: 'diff-context-left' }, [
+                  h('span', { class: 'diff-context-title' }, `${diffMode} diff`),
+                  h(
+                    'span',
+                    { class: 'diff-context-stats' },
+                    `+${changeStats.additions} / -${changeStats.removals} ${statUnit}`,
+                  ),
+                ]),
+                h('div', { class: 'diff-context-controls' }, [
+                  h(
+                    'div',
+                    { class: 'control-toggle', role: 'radiogroup', 'aria-label': 'Layout' },
+                    [
+                      h('label', null, [
+                        h('input', {
+                          type: 'radio',
+                          name: 'view-mode',
+                          value: 'split',
+                          checked: viewMode === 'split',
+                          onChange: () => setViewMode('split'),
+                        }),
+                        h('span', { class: 'control-option' }, 'Split'),
+                      ]),
+                      h('label', null, [
+                        h('input', {
+                          type: 'radio',
+                          name: 'view-mode',
+                          value: 'unified',
+                          checked: viewMode === 'unified',
+                          onChange: () => setViewMode('unified'),
+                        }),
+                        h('span', { class: 'control-option' }, 'Unified'),
+                      ]),
+                    ],
+                  ),
+                  h(
+                    'div',
+                    { class: 'control-toggle', role: 'radiogroup', 'aria-label': 'Diff mode' },
+                    [
+                      h('label', null, [
+                        h('input', {
+                          type: 'radio',
+                          name: 'diff-mode',
+                          value: 'word',
+                          checked: diffMode === 'word',
+                          onChange: () => setDiffMode('word'),
+                        }),
+                        h('span', { class: 'control-option' }, 'Word'),
+                      ]),
+                      h('label', null, [
+                        h('input', {
+                          type: 'radio',
+                          name: 'diff-mode',
+                          value: 'char',
+                          checked: diffMode === 'char',
+                          onChange: () => setDiffMode('char'),
+                        }),
+                        h('span', { class: 'control-option' }, 'Char'),
+                      ]),
+                      h('label', null, [
+                        h('input', {
+                          type: 'radio',
+                          name: 'diff-mode',
+                          value: 'line',
+                          checked: diffMode === 'line',
+                          onChange: () => setDiffMode('line'),
+                        }),
+                        h('span', { class: 'control-option' }, 'Line'),
+                      ]),
+                    ],
+                  ),
+                  h(
+                    'button',
+                    {
+                      type: 'button',
+                      class: 'danger',
+                      onClick: clearAll,
+                    },
+                    'Clear',
+                  ),
+                ]),
+              ]),
+              viewMode === 'split'
+                ? h(SplitDiff, {
+                    parts,
+                    originalLabel: originalLabel || 'Original',
+                    comparisonLabel: comparisonLabel || 'Comparison',
+                    onSaveOriginal: (next) => setOriginalLabel(next),
+                    onSaveComparison: (next) => setComparisonLabel(next),
+                  })
+                : h(UnifiedDiff, { parts }),
+            ]),
             h('div', { class: 'legend' }, [
               h('span', null, [h('i', { class: 'swatch add' }), ' Added content']),
               h('span', null, [h('i', { class: 'swatch remove' }), ' Removed content']),
-              h('span', null, `Top syntax: ${topLanguage}`),
-              h('span', null, `Bottom syntax: ${bottomLanguage}`),
+              h('span', null, `${originalLabel || 'Original'} syntax: ${topLanguage}`),
+              h('span', null, `${comparisonLabel || 'Comparison'} syntax: ${bottomLanguage}`),
             ]),
           ]),
         ]);
