@@ -1,0 +1,17 @@
+{
+  "name": "Diff",
+  "short_name": "Diff",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#111217",
+  "theme_color": "#111217",
+  "icons": [
+    {
+      "src": "./favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}
