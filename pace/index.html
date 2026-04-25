@@ -93,6 +93,7 @@
       }
 
       input[type='number'],
+      input[type='text'],
       select {
         width: 100%;
         border: 1px solid var(--line);
@@ -113,6 +114,40 @@
 
       .toggle input {
         accent-color: var(--accent);
+      }
+
+      .sec-stepper {
+        display: grid;
+        grid-template-columns: auto 1fr auto;
+        gap: 0.35rem;
+        align-items: center;
+      }
+
+      .sec-stepper button {
+        border: 1px solid var(--line);
+        background: #ffffff;
+        color: var(--text);
+        width: 1.9rem;
+        height: 1.9rem;
+        font:
+          700 1rem/1 'IBM Plex Mono',
+          monospace;
+        cursor: pointer;
+      }
+
+      .sec-stepper button:active {
+        background: var(--accent-soft);
+      }
+
+      .event-filter-group {
+        display: none;
+      }
+
+      .event-field-hint {
+        margin-top: 0.26rem;
+        font-size: 0.63rem;
+        letter-spacing: 0.02em;
+        color: var(--muted);
       }
 
       .table-wrap {
@@ -237,6 +272,140 @@
           margin-top: 0.5rem;
         }
       }
+
+      @media (max-width: 760px) {
+        .shell {
+          width: calc(100vw - 0.7rem);
+          margin: 0.35rem auto 1rem;
+        }
+
+        .top {
+          padding: 0.9rem 0.8rem 0.75rem;
+        }
+
+        h1 {
+          font-size: clamp(1.6rem, 8vw, 2.2rem);
+        }
+
+        .sub {
+          margin-top: 0.3rem;
+          font-size: 0.78rem;
+        }
+
+        .controls {
+          gap: 0.45rem;
+        }
+
+        .event-filter-group {
+          display: block;
+          order: 1;
+        }
+
+        .unit-group {
+          order: 2;
+        }
+
+        .min-group {
+          order: 3;
+        }
+
+        .sec-group {
+          order: 4;
+        }
+
+        .group {
+          min-width: 0;
+          width: 100%;
+          padding: 0.38rem 0.4rem 0.42rem;
+        }
+
+        .group.options-group {
+          display: none;
+        }
+
+        .table-wrap {
+          padding: 0.55rem;
+        }
+
+        table {
+          min-width: 0;
+          border-collapse: separate;
+          border-spacing: 0;
+        }
+
+        thead {
+          display: none;
+        }
+
+        tbody {
+          display: grid;
+          gap: 0.65rem;
+        }
+
+        tbody tr {
+          display: block;
+          border: 1px solid var(--line);
+          background: #fff;
+          box-shadow: 0 2px 8px rgba(14, 14, 14, 0.05);
+        }
+
+        tbody tr.checkpoint-row {
+          background: #fbfbf8;
+        }
+
+        tbody td {
+          display: grid;
+          grid-template-columns: minmax(106px, 38%) 1fr;
+          gap: 0.45rem;
+          align-items: baseline;
+          border-right: 0;
+          border-bottom: 1px dashed var(--line);
+          padding: 0.48rem 0.52rem;
+          text-align: left;
+          white-space: normal;
+          font-size: 0.98rem;
+        }
+
+        tbody tr td:last-child {
+          border-bottom: 0;
+        }
+
+        tbody td::before {
+          content: attr(data-label);
+          font-size: 0.68rem;
+          letter-spacing: 0.06em;
+          text-transform: uppercase;
+          color: var(--muted);
+          font-weight: 600;
+        }
+
+        td:first-child {
+          width: auto;
+          padding-left: 0.52rem;
+        }
+
+        .distance {
+          gap: 0.12rem;
+        }
+
+        .distance strong {
+          font-size: 1.05rem;
+        }
+
+        .distance span {
+          font-size: 0.62rem;
+        }
+
+        .checkpoint-row td {
+          font-size: 0.9rem;
+          padding-top: 0.4rem;
+          padding-bottom: 0.4rem;
+        }
+
+        .checkpoint-row td:first-child {
+          padding-left: 0.52rem;
+        }
+      }
     </style>
   </head>
   <body>
@@ -347,17 +516,59 @@
         return unit === 'km' ? km : km * KM_TO_MILE;
       }
 
+      function parseEventDistanceKm(rawValue) {
+        const normalized = String(rawValue || '')
+          .trim()
+          .toLowerCase();
+        if (!normalized) return null;
+
+        const preset = EVENTS.find((event) => event.key === normalized);
+        if (preset) {
+          return { key: preset.key, label: preset.label, km: preset.km, isCustom: false };
+        }
+
+        const aliases = {
+          'half marathon': EVENTS.find((event) => event.key === 'half'),
+          half: EVENTS.find((event) => event.key === 'half'),
+          marathon: EVENTS.find((event) => event.key === 'marathon'),
+        };
+        if (aliases[normalized]) {
+          const event = aliases[normalized];
+          return { key: event.key, label: event.label, km: event.km, isCustom: false };
+        }
+
+        const metricMatch = normalized.match(/^(\d+(?:\.\d+)?)\s*(k|km)?$/);
+        if (metricMatch) {
+          const km = Number(metricMatch[1]);
+          if (Number.isFinite(km) && km > 0) {
+            return {
+              key: `custom-${km}`,
+              label: `${km % 1 === 0 ? km.toFixed(0) : km}K`,
+              km,
+              isCustom: true,
+            };
+          }
+        }
+
+        return null;
+      }
+
       function App() {
         const initialState = useMemo(() => {
           const { hasExplicitState, state: urlState } = readStateFromUrl();
           if (hasExplicitState) return urlState;
           return readStateFromLocalStorage() || urlState;
         }, []);
+        const [isCompact, setIsCompact] = useState(
+          () => window.matchMedia('(max-width: 760px)').matches,
+        );
         const [pace, setPace] = useState(initialState.pace);
         const [unit, setUnit] = useState(initialState.unit);
         const [showSplits, setShowSplits] = useState(initialState.showSplits);
+        const [eventFilter, setEventFilter] = useState('');
 
         const basePace = pace.min * 60 + pace.sec;
+        const effectiveShowSplits = isCompact ? false : showSplits;
 
         const paceColumns = useMemo(() => {
           return DELTAS.map((delta) => {
@@ -380,6 +591,39 @@
           });
         }, [paceColumns, unit]);
 
+        const visibleRows = useMemo(() => {
+          if (!isCompact) {
+            return rows;
+          }
+          const selectedEvent = parseEventDistanceKm(eventFilter);
+
+          if (!selectedEvent) {
+            return [];
+          }
+
+          if (!selectedEvent.isCustom) {
+            return rows.filter((row) => row.key === selectedEvent.key);
+          }
+
+          const distanceInUnit = unitDistance(selectedEvent.km, unit);
+          return [
+            {
+              key: selectedEvent.key,
+              label: selectedEvent.label,
+              km: selectedEvent.km,
+              times: paceColumns.map((col) => formatDuration(distanceInUnit * col.secPerUnit)),
+            },
+          ];
+        }, [rows, eventFilter, isCompact, unit, paceColumns]);
+
+        useEffect(() => {
+          const media = window.matchMedia('(max-width: 760px)');
+          const sync = () => setIsCompact(media.matches);
+          sync();
+          media.addEventListener('change', sync);
+          return () => media.removeEventListener('change', sync);
+        }, []);
+
         useEffect(() => {
           const url = new URL(window.location.href);
           url.search = '';
@@ -389,13 +633,13 @@
           if (unit !== 'km') {
             url.searchParams.set('unit', unit);
           }
-          if (showSplits) {
+          if (effectiveShowSplits) {
             url.searchParams.set('splits', '1');
           }
 
           window.history.replaceState(null, '', url.toString());
           writeStateToLocalStorage({ pace, unit, showSplits });
-        }, [pace.min, pace.sec, unit, showSplits]);
+        }, [pace.min, pace.sec, unit, showSplits, effectiveShowSplits]);
 
         function splitRowsFor(rangeStartKm, rangeEndKm) {
           const start = Math.floor(rangeStartKm) + 1;
@@ -425,7 +669,22 @@
               h('p', { class: 'sub' }, '5K, 10K, Half, Marathon'),
             ]),
             h('div', { class: 'controls' }, [
-              h('div', { class: 'group' }, [
+              h('div', { class: 'group event-filter-group' }, [
+                h('label', { for: 'event-filter' }, 'Event'),
+                h('input', {
+                  id: 'event-filter',
+                  type: 'text',
+                  list: 'event-options',
+                  value: eventFilter,
+                  placeholder: '5k, 10k, half, marathon, 100k',
+                  onInput: (e) => setEventFilter(e.currentTarget.value),
+                }),
+                h('datalist', { id: 'event-options' }, [
+                  ...EVENTS.map((event) => h('option', { value: event.key }, event.label)),
+                ]),
+                h('div', { class: 'event-field-hint' }, 'Choose preset or type custom (e.g. 100k)'),
+              ]),
+              h('div', { class: 'group min-group' }, [
                 h('label', { for: 'min' }, 'Min'),
                 h('input', {
                   id: 'min',
@@ -438,18 +697,40 @@
                     setPace((current) => normalizePace(e.currentTarget.value, current.sec)),
                 }),
               ]),
-              h('div', { class: 'group' }, [
+              h('div', { class: 'group sec-group' }, [
                 h('label', { for: 'sec' }, 'Sec'),
-                h('input', {
-                  id: 'sec',
-                  type: 'number',
-                  inputMode: 'numeric',
-                  value: pace.sec,
-                  onInput: (e) =>
-                    setPace((current) => normalizePace(current.min, e.currentTarget.value)),
-                }),
+                h('div', { class: 'sec-stepper' }, [
+                  h(
+                    'button',
+                    {
+                      type: 'button',
+                      'aria-label': 'Decrease seconds',
+                      onClick: () =>
+                        setPace((current) => normalizePace(current.min, current.sec - 1)),
+                    },
+                    '-',
+                  ),
+                  h('input', {
+                    id: 'sec',
+                    type: 'number',
+                    inputMode: 'numeric',
+                    value: pace.sec,
+                    onInput: (e) =>
+                      setPace((current) => normalizePace(current.min, e.currentTarget.value)),
+                  }),
+                  h(
+                    'button',
+                    {
+                      type: 'button',
+                      'aria-label': 'Increase seconds',
+                      onClick: () =>
+                        setPace((current) => normalizePace(current.min, current.sec + 1)),
+                    },
+                    '+',
+                  ),
+                ]),
               ]),
-              h('div', { class: 'group' }, [
+              h('div', { class: 'group unit-group' }, [
                 h('label', { for: 'unit' }, 'Pace Unit'),
                 h(
                   'select',
@@ -476,7 +757,7 @@
                   ],
                 ),
               ]),
-              h('div', { class: 'group' }, [
+              h('div', { class: 'group options-group' }, [
                 h('label', null, 'Options'),
                 h('label', { class: 'toggle' }, [
                   h('input', {
@@ -506,9 +787,9 @@
               h(
                 'tbody',
                 null,
-                rows.flatMap((row, rowIndex) => {
+                visibleRows.flatMap((row) => {
                   const eventRow = h('tr', { key: row.key }, [
-                    h('td', null, [
+                    h('td', { 'data-label': 'Distance' }, [
                       h('div', { class: 'distance' }, [
                         h('strong', null, row.label),
                         h('span', null, `${row.km.toFixed(3).replace(/\.?0+$/, '')} km`),
@@ -520,24 +801,26 @@
                         {
                           key: `${row.key}-${idx}`,
                           class: paceColumns[idx].delta === 0 ? 'base-cell' : '',
+                          'data-label': paceColumns[idx].paceText,
                         },
                         time,
                       ),
                     ),
                   ]);
 
-                  if (!showSplits) {
+                  if (!effectiveShowSplits) {
                     return [eventRow];
                   }
 
-                  const nextEventKm = EVENTS[rowIndex + 1]?.km;
+                  const currentEventIndex = EVENTS.findIndex((event) => event.key === row.key);
+                  const nextEventKm = EVENTS[currentEventIndex + 1]?.km;
                   if (!nextEventKm) {
                     return [eventRow];
                   }
 
                   const splitRows = splitRowsFor(row.km, nextEventKm).map((split, splitIndex) =>
                     h('tr', { key: `${row.key}-split-${splitIndex}`, class: 'checkpoint-row' }, [
-                      h('td', null, [
+                      h('td', { 'data-label': 'Split' }, [
                         h('div', { class: 'checkpoint-label' }, [h('b', null, split.label)]),
                       ]),
                       ...split.times.map((time, timeIndex) =>
@@ -546,6 +829,7 @@
                           {
                             key: `${row.key}-split-${splitIndex}-${timeIndex}`,
                             class: paceColumns[timeIndex].delta === 0 ? 'base-cell' : '',
+                            'data-label': paceColumns[timeIndex].paceText,
                           },
                           time,
                         ),
