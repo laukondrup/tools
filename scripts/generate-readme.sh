@@ -6,12 +6,13 @@ cd "$ROOT_DIR"
 
 mapfile -t tools < <(find . -maxdepth 1 -type f -name "*.html" -print | sed 's|^\./||' | grep -v '^index\.html$' | sort)
 
-{
-  echo "# Tools"
-  echo
-  echo "Generated tool index for GitHub Pages start page."
-  echo
+START_MARKER="<!-- tools-index:start -->"
+END_MARKER="<!-- tools-index:end -->"
+TMP_INDEX="$(mktemp)"
+TMP_README="$(mktemp)"
 
+{
+  echo "$START_MARKER"
   if [ ${#tools[@]} -eq 0 ]; then
     echo "_No tools found._"
   else
@@ -23,4 +24,46 @@ mapfile -t tools < <(find . -maxdepth 1 -type f -name "*.html" -print | sed 's|^
       printf -- "- [%s](%s) (\`%s\`)\n" "$title" "$file" "$file"
     done
   fi
-} > README.md
+  echo "$END_MARKER"
+} > "$TMP_INDEX"
+
+if [ ! -f README.md ]; then
+  cp "$TMP_INDEX" README.md
+  exit 0
+fi
+
+if grep -q "$START_MARKER" README.md && grep -q "$END_MARKER" README.md; then
+  awk -v start="$START_MARKER" -v end="$END_MARKER" -v block_file="$TMP_INDEX" '
+    BEGIN {
+      in_block = 0
+      while ((getline line < block_file) > 0) {
+        block = block line "\n"
+      }
+      close(block_file)
+    }
+    $0 == start {
+      if (!replaced) {
+        printf "%s", block
+        replaced = 1
+      }
+      in_block = 1
+      next
+    }
+    $0 == end {
+      in_block = 0
+      next
+    }
+    !in_block { print }
+  ' README.md > "$TMP_README"
+else
+  cp README.md "$TMP_README"
+  if [ -s "$TMP_README" ]; then
+    echo >> "$TMP_README"
+  fi
+  echo "## Index" >> "$TMP_README"
+  echo >> "$TMP_README"
+  cat "$TMP_INDEX" >> "$TMP_README"
+fi
+
+mv "$TMP_README" README.md
+rm -f "$TMP_INDEX"
