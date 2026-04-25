@@ -524,26 +524,11 @@
         return unit === 'km' ? km : km * KM_TO_MILE;
       }
 
-      function parseEventDistanceKm(rawValue) {
+      function parseCustomDistanceKm(rawValue) {
         const normalized = String(rawValue || '')
           .trim()
           .toLowerCase();
         if (!normalized) return null;
-
-        const preset = EVENTS.find((event) => event.key === normalized);
-        if (preset) {
-          return { key: preset.key, label: preset.label, km: preset.km, isCustom: false };
-        }
-
-        const aliases = {
-          'half marathon': EVENTS.find((event) => event.key === 'half'),
-          half: EVENTS.find((event) => event.key === 'half'),
-          marathon: EVENTS.find((event) => event.key === 'marathon'),
-        };
-        if (aliases[normalized]) {
-          const event = aliases[normalized];
-          return { key: event.key, label: event.label, km: event.km, isCustom: false };
-        }
 
         const metricMatch = normalized.match(/^(\d+(?:\.\d+)?)\s*(k|km)?$/);
         if (metricMatch) {
@@ -573,7 +558,8 @@
         const [pace, setPace] = useState(initialState.pace);
         const [unit, setUnit] = useState(initialState.unit);
         const [showSplits, setShowSplits] = useState(initialState.showSplits);
-        const [eventFilter, setEventFilter] = useState('');
+        const [eventSelection, setEventSelection] = useState('');
+        const [customDistance, setCustomDistance] = useState('');
 
         const basePace = pace.min * 60 + pace.sec;
         const effectiveShowSplits = isCompact ? false : showSplits;
@@ -603,26 +589,30 @@
           if (!isCompact) {
             return rows;
           }
-          const selectedEvent = parseEventDistanceKm(eventFilter);
-
-          if (!selectedEvent) {
+          if (!eventSelection) {
             return [];
           }
 
-          if (!selectedEvent.isCustom) {
-            return rows.filter((row) => row.key === selectedEvent.key);
+          if (eventSelection !== 'custom') {
+            return rows.filter((row) => row.key === eventSelection);
           }
 
-          const distanceInUnit = unitDistance(selectedEvent.km, unit);
+          const customEvent = parseCustomDistanceKm(customDistance);
+
+          if (!customEvent) {
+            return [];
+          }
+
+          const distanceInUnit = unitDistance(customEvent.km, unit);
           return [
             {
-              key: selectedEvent.key,
-              label: selectedEvent.label,
-              km: selectedEvent.km,
+              key: customEvent.key,
+              label: customEvent.label,
+              km: customEvent.km,
               times: paceColumns.map((col) => formatDuration(distanceInUnit * col.secPerUnit)),
             },
           ];
-        }, [rows, eventFilter, isCompact, unit, paceColumns]);
+        }, [rows, eventSelection, customDistance, isCompact, unit, paceColumns]);
 
         const rowsForDisplay = isCompact ? mobileRows : rows;
         const showSplitRows = !isCompact && showSplits;
@@ -696,21 +686,34 @@
               ? h('div', { class: 'controls' }, [
                   h('div', { class: 'group event-filter-group' }, [
                     h('label', { for: 'event-filter' }, 'Event'),
-                    h('input', {
-                      id: 'event-filter',
-                      type: 'text',
-                      list: 'event-options',
-                      value: eventFilter,
-                      placeholder: '5k, 10k, half, marathon, 100k',
-                      onInput: (e) => setEventFilter(e.currentTarget.value),
-                    }),
-                    h('datalist', { id: 'event-options' }, [
-                      ...EVENTS.map((event) => h('option', { value: event.key }, event.label)),
-                    ]),
+                    h(
+                      'select',
+                      {
+                        id: 'event-filter',
+                        value: eventSelection,
+                        onChange: (e) => setEventSelection(e.currentTarget.value),
+                      },
+                      [
+                        h('option', { value: '' }, 'Select event'),
+                        ...EVENTS.map((event) => h('option', { value: event.key }, event.label)),
+                        h('option', { value: 'custom' }, 'Custom'),
+                      ],
+                    ),
+                    eventSelection === 'custom'
+                      ? h('input', {
+                          id: 'event-filter-custom',
+                          type: 'text',
+                          value: customDistance,
+                          placeholder: '100k',
+                          onInput: (e) => setCustomDistance(e.currentTarget.value),
+                        })
+                      : null,
                     h(
                       'div',
                       { class: 'event-field-hint' },
-                      'Choose preset or type custom (e.g. 100k)',
+                      eventSelection === 'custom'
+                        ? 'Type a custom distance (for example 100k).'
+                        : 'Choose preset event or Custom.',
                     ),
                   ]),
                   h('div', { class: 'group unit-group' }, [

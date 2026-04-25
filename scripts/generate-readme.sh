@@ -19,6 +19,7 @@ TMP_README="$(mktemp)"
 
 {
   echo "$START_MARKER"
+  echo
   if [ ${#tools[@]} -eq 0 ]; then
     echo "_No tools found._"
   else
@@ -38,6 +39,7 @@ TMP_README="$(mktemp)"
       fi
     done
   fi
+  echo
   echo "$END_MARKER"
 } > "$TMP_INDEX"
 
