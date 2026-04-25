@@ -1,0 +1,1054 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Diff Forge</title>
+    <meta name="theme-color" content="#111217" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=JetBrains+Mono:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --bg: #111217;
+        --bg-soft: #171922;
+        --surface: #1d202a;
+        --surface-deep: #151821;
+        --line: #303544;
+        --line-strong: #41495c;
+        --text: #eff2f9;
+        --muted: #9ea8be;
+        --accent: #5ac8fa;
+        --accent-2: #f9c85a;
+        --add-bg: #1d3c31;
+        --remove-bg: #4a2a2f;
+        --radius: 15px;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        color: var(--text);
+        font-family: 'JetBrains Mono', 'IBM Plex Mono', monospace;
+        background:
+          radial-gradient(circle at 12% 4%, rgba(90, 200, 250, 0.17) 0%, transparent 34%),
+          radial-gradient(circle at 86% 94%, rgba(249, 200, 90, 0.12) 0%, transparent 31%),
+          repeating-linear-gradient(
+            -22deg,
+            rgba(255, 255, 255, 0.012) 0,
+            rgba(255, 255, 255, 0.012) 1px,
+            transparent 1px,
+            transparent 13px
+          ),
+          var(--bg);
+      }
+
+      .shell {
+        width: min(1320px, calc(100vw - 1rem));
+        margin: 0.5rem auto 1rem;
+        border: 1px solid var(--line-strong);
+        border-radius: calc(var(--radius) + 2px);
+        background: linear-gradient(168deg, #1d202a 0%, #171a23 58%, #1b1f2a 100%);
+        box-shadow: 0 26px 55px rgba(0, 0, 0, 0.44);
+        overflow: hidden;
+      }
+
+      .hero {
+        padding: 1.1rem 1.15rem 0.95rem;
+        border-bottom: 1px solid var(--line);
+        position: relative;
+      }
+
+      .hero::after {
+        content: '';
+        position: absolute;
+        right: 1rem;
+        top: 1rem;
+        width: 110px;
+        height: 110px;
+        background:
+          linear-gradient(135deg, rgba(90, 200, 250, 0.2), transparent 70%),
+          linear-gradient(45deg, rgba(249, 200, 90, 0.22), transparent 60%);
+        border: 1px solid rgba(255, 255, 255, 0.11);
+        border-radius: 20px;
+        transform: rotate(12deg);
+        pointer-events: none;
+      }
+
+      h1 {
+        margin: 0;
+        font-family: 'Bricolage Grotesque', sans-serif;
+        font-size: clamp(1.35rem, 2.8vw, 2.2rem);
+        line-height: 0.95;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        position: relative;
+        z-index: 1;
+      }
+
+      .tagline {
+        margin: 0.5rem 0 0;
+        color: var(--muted);
+        max-width: 68ch;
+        font-size: 0.8rem;
+        line-height: 1.45;
+        position: relative;
+        z-index: 1;
+      }
+
+      .toolbar {
+        padding: 0.75rem 1.15rem;
+        border-bottom: 1px solid var(--line);
+        display: flex;
+        flex-wrap: wrap;
+        align-items: end;
+        gap: 0.55rem;
+        background: rgba(17, 18, 23, 0.35);
+      }
+
+      .control {
+        display: grid;
+        gap: 0.2rem;
+      }
+
+      .control label {
+        font-size: 0.62rem;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--muted);
+      }
+
+      select,
+      button,
+      input[type='file'] {
+        border: 1px solid var(--line-strong);
+        background: #161b25;
+        color: var(--text);
+        font:
+          500 0.79rem/1 'JetBrains Mono',
+          monospace;
+        border-radius: 10px;
+        padding: 0.44rem 0.54rem;
+      }
+
+      button {
+        cursor: pointer;
+      }
+
+      button:hover,
+      select:hover {
+        border-color: var(--accent);
+      }
+
+      .danger:hover {
+        border-color: #ff8686;
+      }
+
+      .token-stats {
+        margin-left: auto;
+        font-size: 0.73rem;
+        border: 1px solid var(--line);
+        background: #161922;
+        border-radius: 999px;
+        padding: 0.28rem 0.62rem;
+        color: var(--muted);
+      }
+
+      .inputs {
+        padding: 0.8rem 1.15rem 0.95rem;
+        display: grid;
+        gap: 0.72rem;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .pane {
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        background: linear-gradient(180deg, #1c202a 0%, #191c25 100%);
+        overflow: hidden;
+      }
+
+      .pane.drop-target {
+        border-color: var(--accent-2);
+        box-shadow: inset 0 0 0 1px rgba(249, 200, 90, 0.55);
+      }
+
+      .pane-head {
+        padding: 0.62rem 0.72rem;
+        border-bottom: 1px solid var(--line);
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        gap: 0.4rem;
+      }
+
+      .pane-title {
+        margin: 0;
+        font-size: 0.75rem;
+        letter-spacing: 0.09em;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+
+      .file-meta {
+        font-size: 0.71rem;
+        color: var(--muted);
+      }
+
+      .pane-toolbar {
+        padding: 0.55rem 0.72rem;
+        border-bottom: 1px solid var(--line);
+        display: flex;
+        gap: 0.45rem;
+        flex-wrap: wrap;
+        align-items: center;
+      }
+
+      .pane-toolbar label {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        font-size: 0.74rem;
+        color: var(--muted);
+      }
+
+      .editor-wrap {
+        position: relative;
+        min-height: 215px;
+        max-height: 420px;
+        overflow: auto;
+        background: #11151d;
+      }
+
+      .highlight-layer,
+      .editor-input {
+        margin: 0;
+        border: 0;
+        padding: 0.8rem;
+        min-height: 100%;
+        font:
+          400 0.84rem/1.56 'JetBrains Mono',
+          monospace;
+        white-space: pre;
+      }
+
+      .highlight-layer {
+        pointer-events: none;
+        color: #d2dae7;
+      }
+
+      .editor-input {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        resize: none;
+        overflow: hidden;
+        background: transparent;
+        color: transparent;
+        caret-color: #f7fafc;
+        outline: none;
+      }
+
+      .editor-input::selection {
+        background: rgba(90, 200, 250, 0.32);
+      }
+
+      .placeholder {
+        color: #74809a;
+      }
+
+      .status {
+        min-height: 2.2rem;
+        padding: 0.5rem 1.15rem;
+        border-bottom: 1px solid var(--line);
+        font-size: 0.78rem;
+        color: var(--muted);
+      }
+
+      .status.error {
+        color: #ff9f9f;
+      }
+
+      .diff-zone {
+        padding: 0.88rem 1.15rem 1rem;
+      }
+
+      .diff-surface {
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        background: var(--surface-deep);
+        min-height: 230px;
+        overflow: hidden;
+      }
+
+      .diff-empty {
+        margin: 0;
+        padding: 1rem;
+        color: var(--muted);
+        font-size: 0.78rem;
+      }
+
+      .unified {
+        margin: 0;
+        padding: 0.76rem;
+        white-space: pre-wrap;
+        word-break: break-word;
+        font:
+          400 0.82rem/1.55 'JetBrains Mono',
+          monospace;
+      }
+
+      .split {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .diff-pane {
+        border-right: 1px solid var(--line);
+      }
+
+      .diff-pane:last-child {
+        border-right: 0;
+      }
+
+      .diff-head {
+        padding: 0.48rem 0.66rem;
+        border-bottom: 1px solid var(--line);
+        font-size: 0.66rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+
+      .diff-content {
+        margin: 0;
+        padding: 0.72rem;
+        white-space: pre-wrap;
+        word-break: break-word;
+        font:
+          400 0.82rem/1.55 'JetBrains Mono',
+          monospace;
+        min-height: 165px;
+      }
+
+      .segment.add {
+        background: var(--add-bg);
+        color: #d9ffec;
+      }
+
+      .segment.remove {
+        background: var(--remove-bg);
+        color: #ffd8dd;
+      }
+
+      .legend {
+        margin-top: 0.52rem;
+        display: flex;
+        gap: 0.62rem;
+        flex-wrap: wrap;
+        color: var(--muted);
+        font-size: 0.72rem;
+      }
+
+      .swatch {
+        width: 0.88rem;
+        height: 0.88rem;
+        display: inline-block;
+        border: 1px solid var(--line-strong);
+        vertical-align: text-bottom;
+      }
+
+      .swatch.add {
+        background: var(--add-bg);
+      }
+
+      .swatch.remove {
+        background: var(--remove-bg);
+      }
+
+      .token.comment,
+      .token.prolog,
+      .token.cdata {
+        color: #7d8ca7;
+      }
+
+      .token.punctuation {
+        color: #b7c3d9;
+      }
+
+      .token.namespace {
+        opacity: 0.7;
+      }
+
+      .token.property,
+      .token.tag,
+      .token.constant,
+      .token.symbol,
+      .token.deleted {
+        color: #f78ca8;
+      }
+
+      .token.boolean,
+      .token.number {
+        color: #f6d06c;
+      }
+
+      .token.selector,
+      .token.attr-name,
+      .token.string,
+      .token.char,
+      .token.builtin,
+      .token.inserted {
+        color: #77dfb1;
+      }
+
+      .token.operator,
+      .token.entity,
+      .token.url,
+      .language-css .token.string,
+      .style .token.string {
+        color: #5ac8fa;
+      }
+
+      .token.atrule,
+      .token.attr-value,
+      .token.keyword {
+        color: #c89df6;
+      }
+
+      .token.function,
+      .token.class-name {
+        color: #f8b56f;
+      }
+
+      .token.regex,
+      .token.important,
+      .token.variable {
+        color: #ff9f80;
+      }
+
+      .token.important,
+      .token.bold {
+        font-weight: bold;
+      }
+
+      .token.italic {
+        font-style: italic;
+      }
+
+      @media (max-width: 1024px) {
+        .split {
+          grid-template-columns: 1fr;
+        }
+
+        .diff-pane {
+          border-right: 0;
+          border-bottom: 1px solid var(--line);
+        }
+
+        .diff-pane:last-child {
+          border-bottom: 0;
+        }
+      }
+
+      @media (max-width: 760px) {
+        .shell {
+          width: calc(100vw - 0.5rem);
+          margin: 0.25rem auto 0.7rem;
+        }
+
+        .hero,
+        .toolbar,
+        .inputs,
+        .status,
+        .diff-zone {
+          padding-left: 0.62rem;
+          padding-right: 0.62rem;
+        }
+
+        .hero::after {
+          display: none;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="app"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/prismjs@1.30.0/components/prism-core.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/prismjs@1.30.0/components/prism-clike.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/prismjs@1.30.0/components/prism-markup.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/prismjs@1.30.0/components/prism-css.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/prismjs@1.30.0/components/prism-javascript.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/prismjs@1.30.0/components/prism-typescript.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/prismjs@1.30.0/components/prism-jsx.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/prismjs@1.30.0/components/prism-tsx.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/prismjs@1.30.0/components/prism-json.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/prismjs@1.30.0/components/prism-markdown.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/prismjs@1.30.0/components/prism-bash.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/prismjs@1.30.0/components/prism-yaml.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/prismjs@1.30.0/components/prism-python.min.js"></script>
+
+    <script type="module">
+      import { h, render } from 'https://esm.sh/preact@10.26.6';
+      import { useMemo, useRef, useState } from 'https://esm.sh/preact@10.26.6/hooks';
+      import * as Diff from 'https://esm.sh/diff@7.0.0';
+
+      const LANGUAGE_OPTIONS = [
+        { value: 'auto', label: 'Auto detect' },
+        { value: 'javascript', label: 'JavaScript' },
+        { value: 'typescript', label: 'TypeScript' },
+        { value: 'jsx', label: 'JSX' },
+        { value: 'tsx', label: 'TSX' },
+        { value: 'json', label: 'JSON' },
+        { value: 'markup', label: 'HTML/XML' },
+        { value: 'css', label: 'CSS' },
+        { value: 'markdown', label: 'Markdown' },
+        { value: 'bash', label: 'Bash' },
+        { value: 'yaml', label: 'YAML' },
+        { value: 'python', label: 'Python' },
+        { value: 'clike', label: 'C-like' },
+      ];
+
+      const EXTENSION_LANGUAGE = {
+        js: 'javascript',
+        mjs: 'javascript',
+        cjs: 'javascript',
+        ts: 'typescript',
+        jsx: 'jsx',
+        tsx: 'tsx',
+        json: 'json',
+        html: 'markup',
+        htm: 'markup',
+        xml: 'markup',
+        svg: 'markup',
+        css: 'css',
+        md: 'markdown',
+        markdown: 'markdown',
+        sh: 'bash',
+        bash: 'bash',
+        zsh: 'bash',
+        yml: 'yaml',
+        yaml: 'yaml',
+        py: 'python',
+        c: 'clike',
+        cpp: 'clike',
+        h: 'clike',
+        java: 'clike',
+      };
+
+      const DECODER = new TextDecoder('utf-8', { fatal: false });
+
+      function bytesLabel(bytes) {
+        if (!Number.isFinite(bytes) || bytes < 0) return 'unknown size';
+        if (bytes < 1024) return `${bytes} B`;
+        if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+        return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
+      }
+
+      function escapeHtml(value) {
+        return value
+          .replaceAll('&', '&amp;')
+          .replaceAll('<', '&lt;')
+          .replaceAll('>', '&gt;')
+          .replaceAll('"', '&quot;')
+          .replaceAll("'", '&#39;');
+      }
+
+      function extensionFromFilename(filename) {
+        if (!filename || !filename.includes('.')) return '';
+        return filename.split('.').pop().toLowerCase();
+      }
+
+      function detectLanguage(filename, text) {
+        const ext = extensionFromFilename(filename);
+        if (ext && EXTENSION_LANGUAGE[ext]) return EXTENSION_LANGUAGE[ext];
+
+        const sample = text.slice(0, 6000);
+        const trimmed = sample.trimStart();
+
+        if (!trimmed) return 'javascript';
+        if (trimmed.startsWith('{') || trimmed.startsWith('[')) return 'json';
+        if (trimmed.startsWith('# ') || trimmed.includes('\n## ')) return 'markdown';
+        if (
+          trimmed.startsWith('<!doctype') ||
+          trimmed.startsWith('<html') ||
+          trimmed.startsWith('<')
+        ) {
+          return 'markup';
+        }
+        if (trimmed.startsWith('---') || trimmed.includes(':\n  ')) return 'yaml';
+        if (
+          trimmed.startsWith('#!/bin/') ||
+          trimmed.includes('\nfi\n') ||
+          trimmed.includes(' && ')
+        ) {
+          return 'bash';
+        }
+        if (trimmed.includes('def ') || trimmed.includes('import ') || trimmed.includes('class ')) {
+          return 'python';
+        }
+        if (
+          trimmed.includes('interface ') ||
+          trimmed.includes('type ') ||
+          trimmed.includes(': string')
+        ) {
+          return 'typescript';
+        }
+        if (trimmed.includes('function ') || trimmed.includes('const ') || trimmed.includes('=>')) {
+          return 'javascript';
+        }
+
+        return 'javascript';
+      }
+
+      function chooseLanguage(selection, filename, text) {
+        if (selection && selection !== 'auto') return selection;
+        return detectLanguage(filename, text);
+      }
+
+      function highlightCode(text, language) {
+        const prism = window.Prism;
+        if (!prism) return escapeHtml(text);
+        const grammar = prism.languages[language] || prism.languages.javascript;
+        try {
+          return prism.highlight(text, grammar, language);
+        } catch {
+          return escapeHtml(text);
+        }
+      }
+
+      function highlightInputText(text, language) {
+        if (!text) {
+          return '<span class="placeholder">Start typing, paste, or drop a file...</span>';
+        }
+        // Keep one extra newline so the overlay height stays aligned at EOF.
+        return highlightCode(`${text}\n`, language);
+      }
+
+      async function readFileAsText(file) {
+        const buffer = await file.arrayBuffer();
+        const bytes = new Uint8Array(buffer);
+
+        let nullCount = 0;
+        for (let i = 0; i < bytes.length; i += 1) {
+          if (bytes[i] === 0) {
+            nullCount += 1;
+            if (nullCount > 2) {
+              throw new Error('Looks like a binary file (NUL bytes detected).');
+            }
+          }
+        }
+
+        return DECODER.decode(bytes);
+      }
+
+      function buildParts(a, b, mode) {
+        if (mode === 'char') return Diff.diffChars(a, b);
+        return Diff.diffWordsWithSpace(a, b);
+      }
+
+      function renderDiffHtml(text) {
+        return escapeHtml(text).replaceAll('\n', '<br />');
+      }
+
+      function UnifiedDiff({ parts }) {
+        if (!parts.length) {
+          return h(
+            'p',
+            { class: 'diff-empty' },
+            'Paste text or drop files into both panes to generate a diff.',
+          );
+        }
+
+        return h(
+          'pre',
+          { class: 'unified' },
+          parts.map((part, idx) => {
+            const type = part.added ? 'add' : part.removed ? 'remove' : 'same';
+            return h('span', {
+              key: `${idx}-${type}`,
+              class: `segment ${type}`,
+              dangerouslySetInnerHTML: { __html: renderDiffHtml(part.value) },
+            });
+          }),
+        );
+      }
+
+      function SplitDiff({ parts }) {
+        if (!parts.length) {
+          return h(
+            'p',
+            { class: 'diff-empty' },
+            'Paste text or drop files into both panes to generate a diff.',
+          );
+        }
+
+        return h('div', { class: 'split' }, [
+          h('div', { class: 'diff-pane', key: 'left' }, [
+            h('div', { class: 'diff-head' }, 'Top input'),
+            h(
+              'pre',
+              { class: 'diff-content' },
+              parts
+                .filter((part) => !part.added)
+                .map((part, idx) => {
+                  const type = part.removed ? 'remove' : 'same';
+                  return h('span', {
+                    key: `l-${idx}-${type}`,
+                    class: `segment ${type}`,
+                    dangerouslySetInnerHTML: { __html: renderDiffHtml(part.value) },
+                  });
+                }),
+            ),
+          ]),
+          h('div', { class: 'diff-pane', key: 'right' }, [
+            h('div', { class: 'diff-head' }, 'Bottom input'),
+            h(
+              'pre',
+              { class: 'diff-content' },
+              parts
+                .filter((part) => !part.removed)
+                .map((part, idx) => {
+                  const type = part.added ? 'add' : 'same';
+                  return h('span', {
+                    key: `r-${idx}-${type}`,
+                    class: `segment ${type}`,
+                    dangerouslySetInnerHTML: { __html: renderDiffHtml(part.value) },
+                  });
+                }),
+            ),
+          ]),
+        ]);
+      }
+
+      function InputPane({
+        title,
+        text,
+        setText,
+        fileMeta,
+        setFileMeta,
+        languageSelection,
+        setLanguageSelection,
+        effectiveLanguage,
+        onLoadFile,
+        isDropTarget,
+        setDropTarget,
+      }) {
+        const fileInputRef = useRef(null);
+        const scrollRef = useRef(null);
+        const textareaRef = useRef(null);
+        const highlightRef = useRef(null);
+
+        async function onFile(file) {
+          if (!file) return;
+          await onLoadFile(file, setText, setFileMeta);
+        }
+
+        function onInputFile(event) {
+          const [file] = event.target.files || [];
+          void onFile(file);
+          event.target.value = '';
+        }
+
+        function onDragOver(event) {
+          event.preventDefault();
+          event.dataTransfer.dropEffect = 'copy';
+          setDropTarget(true);
+        }
+
+        function onDragLeave(event) {
+          event.preventDefault();
+          setDropTarget(false);
+        }
+
+        function onDrop(event) {
+          event.preventDefault();
+          setDropTarget(false);
+          const [file] = event.dataTransfer.files || [];
+          if (file) void onFile(file);
+        }
+
+        function onScroll() {
+          if (!textareaRef.current || !highlightRef.current) return;
+          highlightRef.current.scrollTop = textareaRef.current.scrollTop;
+          highlightRef.current.scrollLeft = textareaRef.current.scrollLeft;
+        }
+
+        async function pasteFromClipboard() {
+          try {
+            const value = await navigator.clipboard.readText();
+            setText(value);
+            setFileMeta({ name: 'clipboard.txt', size: value.length, source: 'clipboard' });
+          } catch {
+            // Clipboard API may be restricted by browser settings.
+          }
+        }
+
+        function onTextareaPaste(event) {
+          const item = Array.from(event.clipboardData?.items || []).find(
+            (entry) => entry.kind === 'file',
+          );
+          if (!item) return;
+          const file = item.getAsFile();
+          if (!file) return;
+          event.preventDefault();
+          void onFile(file);
+        }
+
+        return h(
+          'section',
+          {
+            class: `pane${isDropTarget ? ' drop-target' : ''}`,
+            onDragOver,
+            onDragLeave,
+            onDrop,
+          },
+          [
+            h('div', { class: 'pane-head', key: 'head' }, [
+              h('p', { class: 'pane-title' }, title),
+              fileMeta
+                ? h(
+                    'span',
+                    { class: 'file-meta' },
+                    `${fileMeta.name} (${bytesLabel(fileMeta.size)}) · ${fileMeta.source}`,
+                  )
+                : h(
+                    'span',
+                    { class: 'file-meta' },
+                    `Drag and drop a file into ${title.toLowerCase()}`,
+                  ),
+            ]),
+            h('div', { class: 'pane-toolbar', key: 'toolbar' }, [
+              h(
+                'button',
+                {
+                  type: 'button',
+                  onClick: () => fileInputRef.current?.click(),
+                },
+                'Import file',
+              ),
+              h(
+                'button',
+                {
+                  type: 'button',
+                  onClick: () => {
+                    void pasteFromClipboard();
+                  },
+                },
+                'Paste from clipboard',
+              ),
+              h('input', {
+                type: 'file',
+                ref: fileInputRef,
+                style: 'display:none',
+                onChange: onInputFile,
+              }),
+              h('label', null, [
+                h('span', null, 'Language'),
+                h(
+                  'select',
+                  {
+                    value: languageSelection,
+                    onChange: (event) => setLanguageSelection(event.currentTarget.value),
+                  },
+                  LANGUAGE_OPTIONS.map((option) =>
+                    h('option', { key: option.value, value: option.value }, option.label),
+                  ),
+                ),
+              ]),
+              h('span', { class: 'file-meta' }, `Using: ${effectiveLanguage}`),
+            ]),
+            h('div', { class: 'editor-wrap', ref: scrollRef }, [
+              h('pre', {
+                ref: highlightRef,
+                class: 'highlight-layer',
+                'aria-hidden': 'true',
+                dangerouslySetInnerHTML: { __html: highlightInputText(text, effectiveLanguage) },
+              }),
+              h('textarea', {
+                ref: textareaRef,
+                class: 'editor-input',
+                value: text,
+                spellCheck: false,
+                onInput: (event) => setText(event.currentTarget.value),
+                onPaste: onTextareaPaste,
+                onScroll,
+                placeholder: ' ',
+              }),
+            ]),
+          ],
+        );
+      }
+
+      function App() {
+        const [topText, setTopText] = useState('');
+        const [bottomText, setBottomText] = useState('');
+        const [topFileMeta, setTopFileMeta] = useState(null);
+        const [bottomFileMeta, setBottomFileMeta] = useState(null);
+        const [viewMode, setViewMode] = useState('unified');
+        const [diffMode, setDiffMode] = useState('word');
+        const [topLanguageSelection, setTopLanguageSelection] = useState('auto');
+        const [bottomLanguageSelection, setBottomLanguageSelection] = useState('auto');
+        const [statusMessage, setStatusMessage] = useState(
+          'Ready. Paste or drop files directly in each input pane.',
+        );
+        const [statusError, setStatusError] = useState(false);
+        const [topDropTarget, setTopDropTarget] = useState(false);
+        const [bottomDropTarget, setBottomDropTarget] = useState(false);
+
+        const topLanguage = useMemo(
+          () => chooseLanguage(topLanguageSelection, topFileMeta?.name, topText),
+          [topLanguageSelection, topFileMeta, topText],
+        );
+
+        const bottomLanguage = useMemo(
+          () => chooseLanguage(bottomLanguageSelection, bottomFileMeta?.name, bottomText),
+          [bottomLanguageSelection, bottomFileMeta, bottomText],
+        );
+
+        const parts = useMemo(
+          () => buildParts(topText, bottomText, diffMode),
+          [topText, bottomText, diffMode],
+        );
+
+        const changeStats = useMemo(() => {
+          let additions = 0;
+          let removals = 0;
+          for (const part of parts) {
+            if (part.added) additions += part.count ?? part.value.length;
+            if (part.removed) removals += part.count ?? part.value.length;
+          }
+          return { additions, removals };
+        }, [parts]);
+
+        async function onLoadFile(file, setText, setFileMeta) {
+          try {
+            const text = await readFileAsText(file);
+            setText(text);
+            setFileMeta({ name: file.name, size: file.size, source: 'file' });
+            setStatusError(false);
+            setStatusMessage(`Loaded ${file.name} (${bytesLabel(file.size)}).`);
+          } catch (error) {
+            setStatusError(true);
+            setStatusMessage(`Failed to read ${file.name}: ${error.message}`);
+          }
+        }
+
+        function clearAll() {
+          setTopText('');
+          setBottomText('');
+          setTopFileMeta(null);
+          setBottomFileMeta(null);
+          setTopLanguageSelection('auto');
+          setBottomLanguageSelection('auto');
+          setStatusError(false);
+          setStatusMessage('Cleared both inputs.');
+        }
+
+        return h('main', { class: 'shell' }, [
+          h('header', { class: 'hero', key: 'hero' }, [
+            h('h1', null, 'Diff Forge'),
+            h(
+              'p',
+              { class: 'tagline' },
+              'Input-first diff workstation: syntax-highlighted editors on top, plain high-contrast diff output below.',
+            ),
+          ]),
+          h('div', { class: 'toolbar', key: 'toolbar' }, [
+            h('div', { class: 'control' }, [
+              h('label', null, 'Layout'),
+              h(
+                'select',
+                {
+                  value: viewMode,
+                  onChange: (event) => setViewMode(event.currentTarget.value),
+                },
+                [
+                  h('option', { value: 'unified' }, 'Unified'),
+                  h('option', { value: 'split' }, 'Split'),
+                ],
+              ),
+            ]),
+            h('div', { class: 'control' }, [
+              h('label', null, 'Diff mode'),
+              h(
+                'select',
+                {
+                  value: diffMode,
+                  onChange: (event) => setDiffMode(event.currentTarget.value),
+                },
+                [h('option', { value: 'word' }, 'Word'), h('option', { value: 'char' }, 'Char')],
+              ),
+            ]),
+            h(
+              'button',
+              {
+                type: 'button',
+                class: 'danger',
+                onClick: clearAll,
+              },
+              'Clear',
+            ),
+            h(
+              'span',
+              { class: 'token-stats' },
+              `+${changeStats.additions} / -${changeStats.removals} tokens`,
+            ),
+          ]),
+          h('section', { class: 'inputs', key: 'inputs' }, [
+            h(InputPane, {
+              title: 'Top input',
+              text: topText,
+              setText: setTopText,
+              fileMeta: topFileMeta,
+              setFileMeta: setTopFileMeta,
+              languageSelection: topLanguageSelection,
+              setLanguageSelection: setTopLanguageSelection,
+              effectiveLanguage: topLanguage,
+              onLoadFile,
+              isDropTarget: topDropTarget,
+              setDropTarget: setTopDropTarget,
+            }),
+            h(InputPane, {
+              title: 'Bottom input',
+              text: bottomText,
+              setText: setBottomText,
+              fileMeta: bottomFileMeta,
+              setFileMeta: setBottomFileMeta,
+              languageSelection: bottomLanguageSelection,
+              setLanguageSelection: setBottomLanguageSelection,
+              effectiveLanguage: bottomLanguage,
+              onLoadFile,
+              isDropTarget: bottomDropTarget,
+              setDropTarget: setBottomDropTarget,
+            }),
+          ]),
+          h('div', { class: `status${statusError ? ' error' : ''}`, key: 'status' }, statusMessage),
+          h('section', { class: 'diff-zone', key: 'diff' }, [
+            h(
+              'div',
+              { class: 'diff-surface' },
+              viewMode === 'split' ? h(SplitDiff, { parts }) : h(UnifiedDiff, { parts }),
+            ),
+            h('div', { class: 'legend' }, [
+              h('span', null, [h('i', { class: 'swatch add' }), ' Added content']),
+              h('span', null, [h('i', { class: 'swatch remove' }), ' Removed content']),
+              h('span', null, `Top syntax: ${topLanguage}`),
+              h('span', null, `Bottom syntax: ${bottomLanguage}`),
+            ]),
+          ]),
+        ]);
+      }
+
+      render(h(App), document.getElementById('app'));
+    </script>
+  </body>
+</html>
