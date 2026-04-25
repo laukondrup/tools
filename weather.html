@@ -4,6 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Weather Forecast</title>
+    <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
     <style>
       :root {
         color-scheme: light;
@@ -241,6 +242,7 @@
         sleetandthunder: "Sleet & Thunder",
       };
       const WEATHER_CACHE_PREFIX = "yr-weather-cache-v1:";
+      const WEATHER_STATE_KEY = "yr-weather-state-v1";
 
       function interpretSymbolCode(symbolCode) {
         const baseCode = String(symbolCode || "").replace(/_day|_night|_polartwilight/g, "");
@@ -309,12 +311,43 @@
       function readStateFromUrl() {
         const params = new URLSearchParams(window.location.search);
         const q = (params.get("q") || "").trim();
-        const lat = Number(params.get("lat"));
-        const lng = Number(params.get("lng"));
+        const latRaw = params.get("lat");
+        const lngRaw = params.get("lng");
+        const hasCoords =
+          latRaw != null &&
+          lngRaw != null &&
+          String(latRaw).trim() !== "" &&
+          String(lngRaw).trim() !== "";
+        const lat = hasCoords ? Number(latRaw) : NaN;
+        const lng = hasCoords ? Number(lngRaw) : NaN;
         return {
           q,
-          coords: Number.isFinite(lat) && Number.isFinite(lng) ? { lat, lng } : null,
+          coords: hasCoords && Number.isFinite(lat) && Number.isFinite(lng) ? { lat, lng } : null,
         };
+      }
+
+      function readStateFromLocalStorage() {
+        try {
+          const raw = localStorage.getItem(WEATHER_STATE_KEY);
+          if (!raw) return { q: "", coords: null };
+          const parsed = JSON.parse(raw);
+          if (!parsed || typeof parsed !== "object") return { q: "", coords: null };
+
+          const q = typeof parsed.q === "string" ? parsed.q.trim() : "";
+          const lat = typeof parsed?.coords?.lat === "number" ? parsed.coords.lat : NaN;
+          const lng = typeof parsed?.coords?.lng === "number" ? parsed.coords.lng : NaN;
+          const coords =
+            Number.isFinite(lat) && Number.isFinite(lng) ? { lat: roundCoord(lat), lng: roundCoord(lng) } : null;
+          return { q, coords };
+        } catch {
+          return { q: "", coords: null };
+        }
+      }
+
+      function writeStateToLocalStorage(state) {
+        try {
+          localStorage.setItem(WEATHER_STATE_KEY, JSON.stringify(state));
+        } catch {}
       }
 
       function writeCoordsToUrl(lat, lng) {
@@ -510,7 +543,8 @@
 
         const dailyRows = useMemo(() => summarizeForecast(forecast), [forecast]);
 
-        async function loadForecastFor(lat, lng, label, urlMode = "coords") {
+        async function loadForecastFor(lat, lng, label, options = {}) {
+          const { urlMode = "coords", query = "" } = options;
           const roundedLat = roundCoord(lat);
           const roundedLng = roundCoord(lng);
           const now = Date.now();
@@ -526,6 +560,9 @@
             setLocationLabel(label || `${roundedLat.toFixed(4)}, ${roundedLng.toFixed(4)}`);
             if (urlMode === "coords") {
               writeCoordsToUrl(roundedLat, roundedLng);
+              writeStateToLocalStorage({ q: "", coords: { lat: roundedLat, lng: roundedLng } });
+            } else {
+              writeStateToLocalStorage({ q: query, coords: { lat: roundedLat, lng: roundedLng } });
             }
             setStatus("Forecast loaded from cache.");
             setIsLoading(false);
@@ -549,6 +586,9 @@
               }
               if (urlMode === "coords") {
                 writeCoordsToUrl(roundedLat, roundedLng);
+                writeStateToLocalStorage({ q: "", coords: { lat: roundedLat, lng: roundedLng } });
+              } else {
+                writeStateToLocalStorage({ q: query, coords: { lat: roundedLat, lng: roundedLng } });
               }
               setStatus("Forecast not modified; reused cached data.");
               setIsLoading(false);
@@ -565,6 +605,9 @@
             });
             if (urlMode === "coords") {
               writeCoordsToUrl(roundedLat, roundedLng);
+              writeStateToLocalStorage({ q: "", coords: { lat: roundedLat, lng: roundedLng } });
+            } else {
+              writeStateToLocalStorage({ q: query, coords: { lat: roundedLat, lng: roundedLng } });
             }
             if (response.status === 203) {
               setStatus("Forecast loaded (warning: endpoint is marked deprecated by upstream status 203).");
@@ -582,14 +625,20 @@
 
         useEffect(() => {
           async function loadFromUrlState() {
-            const state = readStateFromUrl();
+            const urlState = readStateFromUrl();
+            const hasUrlState = Boolean(urlState.q || urlState.coords);
+            const state = hasUrlState ? urlState : readStateFromLocalStorage();
+
             if (state.q) {
               setSearchQuery(state.q);
               setIsLoading(true);
               setStatus("Searching location...");
               try {
                 const place = await geocodeLocation(state.q);
-                await loadForecastFor(place.lat, place.lng, place.label, "query");
+                await loadForecastFor(place.lat, place.lng, place.label, {
+                  urlMode: "query",
+                  query: state.q,
+                });
                 writeQueryToUrl(state.q);
               } catch (error) {
                 setForecast(null);
@@ -604,7 +653,8 @@
               await loadForecastFor(
                 state.coords.lat,
                 state.coords.lng,
-                `${state.coords.lat.toFixed(4)}, ${state.coords.lng.toFixed(4)}`
+                `${state.coords.lat.toFixed(4)}, ${state.coords.lng.toFixed(4)}`,
+                { urlMode: "coords" }
               );
             }
           }
@@ -624,7 +674,9 @@
           navigator.geolocation.getCurrentPosition(
             async (position) => {
               const { latitude, longitude } = position.coords;
-              await loadForecastFor(latitude, longitude, `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`);
+              await loadForecastFor(latitude, longitude, `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`, {
+                urlMode: "coords",
+              });
             },
             (error) => {
               const message =
@@ -653,7 +705,7 @@
           setStatus("Searching location...");
           try {
             const place = await geocodeLocation(query);
-            await loadForecastFor(place.lat, place.lng, place.label, "query");
+            await loadForecastFor(place.lat, place.lng, place.label, { urlMode: "query", query });
             writeQueryToUrl(query);
           } catch (error) {
             setForecast(null);
