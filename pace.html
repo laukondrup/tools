@@ -113,6 +113,7 @@
 
       .table-wrap {
         overflow-x: auto;
+        overflow-y: visible;
         position: relative;
       }
 
@@ -136,6 +137,12 @@
         text-transform: uppercase;
         letter-spacing: 0.06em;
         white-space: nowrap;
+      }
+
+      thead {
+        position: sticky;
+        top: 0;
+        z-index: 6;
       }
 
       tbody td {
@@ -179,16 +186,22 @@
 
       .pace-col {
         display: grid;
-        gap: 0.17rem;
-      }
-
-      .pace-col b {
-        font-size: 0.76rem;
+        gap: 0;
       }
 
       .pace-col small {
-        color: var(--muted);
-        font-size: 0.64rem;
+        color: #4c4c44;
+        font-size: 0.75rem;
+        font-weight: 500;
+      }
+
+      .pace-col.base small {
+        font-weight: 700;
+        color: #24241f;
+      }
+
+      .base-cell {
+        font-weight: 700;
       }
 
       .checkpoint-row td {
@@ -289,10 +302,8 @@
         const paceColumns = useMemo(() => {
           return DELTAS.map((delta) => {
             const secPerUnit = Math.max(60, basePace + delta);
-            const label = delta === 0 ? "Base" : delta < 0 ? `Base${delta}s` : `Base+${delta}s`;
             return {
               delta,
-              label,
               secPerUnit,
               paceText: `${formatPace(secPerUnit)}/${unit}`,
             };
@@ -394,10 +405,9 @@
               h("thead", null, [
                 h("tr", null, [
                   h("th", null, "Distance"),
-                  ...paceColumns.map((col) =>
-                    h("th", { key: col.label }, [
-                      h("div", { class: "pace-col" }, [
-                        h("b", null, col.label),
+                  ...paceColumns.map((col, colIndex) =>
+                    h("th", { key: `pace-col-${colIndex}` }, [
+                      h("div", { class: `pace-col${col.delta === 0 ? " base" : ""}` }, [
                         h("small", null, col.paceText),
                       ]),
                     ])
@@ -415,7 +425,16 @@
                         h("span", null, `${row.km.toFixed(3).replace(/\.?0+$/, "")} km`),
                       ]),
                     ]),
-                    ...row.times.map((time, idx) => h("td", { key: `${row.key}-${idx}` }, time)),
+                    ...row.times.map((time, idx) =>
+                      h(
+                        "td",
+                        {
+                          key: `${row.key}-${idx}`,
+                          class: paceColumns[idx].delta === 0 ? "base-cell" : "",
+                        },
+                        time
+                      )
+                    ),
                   ]);
 
                   if (!showSplits) {
@@ -435,7 +454,14 @@
                         ]),
                       ]),
                       ...split.times.map((time, timeIndex) =>
-                        h("td", { key: `${row.key}-split-${splitIndex}-${timeIndex}` }, time)
+                        h(
+                          "td",
+                          {
+                            key: `${row.key}-split-${splitIndex}-${timeIndex}`,
+                            class: paceColumns[timeIndex].delta === 0 ? "base-cell" : "",
+                          },
+                          time
+                        )
                       ),
                     ]),
                   );
