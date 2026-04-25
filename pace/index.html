@@ -258,6 +258,14 @@
         letter-spacing: 0.03em;
       }
 
+      .mobile-empty {
+        border: 1px dashed var(--line);
+        padding: 0.8rem;
+        font-size: 0.84rem;
+        color: var(--muted);
+        background: #fbfbf8;
+      }
+
       @media (max-width: 920px) {
         .top {
           grid-template-columns: 1fr;
@@ -591,7 +599,7 @@
           });
         }, [paceColumns, unit]);
 
-        const visibleRows = useMemo(() => {
+        const mobileRows = useMemo(() => {
           if (!isCompact) {
             return rows;
           }
@@ -615,6 +623,22 @@
             },
           ];
         }, [rows, eventFilter, isCompact, unit, paceColumns]);
+
+        const rowsForDisplay = isCompact ? mobileRows : rows;
+        const showSplitRows = !isCompact && showSplits;
+
+        function handleUnitChange(nextUnit) {
+          if (nextUnit === unit) return;
+
+          const currentSecPerUnit = pace.min * 60 + pace.sec;
+          const convertedSecPerUnit =
+            unit === 'km' && nextUnit === 'mi'
+              ? currentSecPerUnit / KM_TO_MILE
+              : currentSecPerUnit * KM_TO_MILE;
+
+          setPace(normalizePace(0, Math.round(convertedSecPerUnit)));
+          setUnit(nextUnit);
+        }
 
         useEffect(() => {
           const media = window.matchMedia('(max-width: 760px)');
@@ -668,180 +692,226 @@
               h('h1', null, 'Pace Table'),
               h('p', { class: 'sub' }, '5K, 10K, Half, Marathon'),
             ]),
-            h('div', { class: 'controls' }, [
-              h('div', { class: 'group event-filter-group' }, [
-                h('label', { for: 'event-filter' }, 'Event'),
-                h('input', {
-                  id: 'event-filter',
-                  type: 'text',
-                  list: 'event-options',
-                  value: eventFilter,
-                  placeholder: '5k, 10k, half, marathon, 100k',
-                  onInput: (e) => setEventFilter(e.currentTarget.value),
-                }),
-                h('datalist', { id: 'event-options' }, [
-                  ...EVENTS.map((event) => h('option', { value: event.key }, event.label)),
+            isCompact
+              ? h('div', { class: 'controls' }, [
+                  h('div', { class: 'group event-filter-group' }, [
+                    h('label', { for: 'event-filter' }, 'Event'),
+                    h('input', {
+                      id: 'event-filter',
+                      type: 'text',
+                      list: 'event-options',
+                      value: eventFilter,
+                      placeholder: '5k, 10k, half, marathon, 100k',
+                      onInput: (e) => setEventFilter(e.currentTarget.value),
+                    }),
+                    h('datalist', { id: 'event-options' }, [
+                      ...EVENTS.map((event) => h('option', { value: event.key }, event.label)),
+                    ]),
+                    h(
+                      'div',
+                      { class: 'event-field-hint' },
+                      'Choose preset or type custom (e.g. 100k)',
+                    ),
+                  ]),
+                  h('div', { class: 'group unit-group' }, [
+                    h('label', { for: 'unit-mobile' }, 'Pace Unit'),
+                    h(
+                      'select',
+                      {
+                        id: 'unit-mobile',
+                        value: unit,
+                        onChange: (e) => handleUnitChange(e.currentTarget.value),
+                      },
+                      [
+                        h('option', { value: 'km' }, 'per kilometer'),
+                        h('option', { value: 'mi' }, 'per mile'),
+                      ],
+                    ),
+                  ]),
+                  h('div', { class: 'group min-group' }, [
+                    h('label', { for: 'min-mobile' }, 'Min'),
+                    h('input', {
+                      id: 'min-mobile',
+                      type: 'number',
+                      inputMode: 'numeric',
+                      min: '0',
+                      max: '99',
+                      value: pace.min,
+                      onInput: (e) =>
+                        setPace((current) => normalizePace(e.currentTarget.value, current.sec)),
+                    }),
+                  ]),
+                  h('div', { class: 'group sec-group' }, [
+                    h('label', { for: 'sec-mobile' }, 'Sec'),
+                    h('div', { class: 'sec-stepper' }, [
+                      h(
+                        'button',
+                        {
+                          type: 'button',
+                          'aria-label': 'Decrease seconds',
+                          onClick: () =>
+                            setPace((current) => normalizePace(current.min, current.sec - 1)),
+                        },
+                        '-',
+                      ),
+                      h('input', {
+                        id: 'sec-mobile',
+                        type: 'number',
+                        inputMode: 'numeric',
+                        value: pace.sec,
+                        onInput: (e) =>
+                          setPace((current) => normalizePace(current.min, e.currentTarget.value)),
+                      }),
+                      h(
+                        'button',
+                        {
+                          type: 'button',
+                          'aria-label': 'Increase seconds',
+                          onClick: () =>
+                            setPace((current) => normalizePace(current.min, current.sec + 1)),
+                        },
+                        '+',
+                      ),
+                    ]),
+                  ]),
+                ])
+              : h('div', { class: 'controls' }, [
+                  h('div', { class: 'group' }, [
+                    h('label', { for: 'min' }, 'Min'),
+                    h('input', {
+                      id: 'min',
+                      type: 'number',
+                      inputMode: 'numeric',
+                      min: '0',
+                      max: '99',
+                      value: pace.min,
+                      onInput: (e) =>
+                        setPace((current) => normalizePace(e.currentTarget.value, current.sec)),
+                    }),
+                  ]),
+                  h('div', { class: 'group' }, [
+                    h('label', { for: 'sec' }, 'Sec'),
+                    h('input', {
+                      id: 'sec',
+                      type: 'number',
+                      inputMode: 'numeric',
+                      value: pace.sec,
+                      onInput: (e) =>
+                        setPace((current) => normalizePace(current.min, e.currentTarget.value)),
+                    }),
+                  ]),
+                  h('div', { class: 'group' }, [
+                    h('label', { for: 'unit' }, 'Pace Unit'),
+                    h(
+                      'select',
+                      {
+                        id: 'unit',
+                        value: unit,
+                        onChange: (e) => handleUnitChange(e.currentTarget.value),
+                      },
+                      [
+                        h('option', { value: 'km' }, 'per kilometer'),
+                        h('option', { value: 'mi' }, 'per mile'),
+                      ],
+                    ),
+                  ]),
+                  h('div', { class: 'group options-group' }, [
+                    h('label', null, 'Options'),
+                    h('label', { class: 'toggle' }, [
+                      h('input', {
+                        type: 'checkbox',
+                        checked: showSplits,
+                        onChange: (e) => setShowSplits(e.currentTarget.checked),
+                      }),
+                      'Show splits',
+                    ]),
+                  ]),
                 ]),
-                h('div', { class: 'event-field-hint' }, 'Choose preset or type custom (e.g. 100k)'),
-              ]),
-              h('div', { class: 'group min-group' }, [
-                h('label', { for: 'min' }, 'Min'),
-                h('input', {
-                  id: 'min',
-                  type: 'number',
-                  inputMode: 'numeric',
-                  min: '0',
-                  max: '99',
-                  value: pace.min,
-                  onInput: (e) =>
-                    setPace((current) => normalizePace(e.currentTarget.value, current.sec)),
-                }),
-              ]),
-              h('div', { class: 'group sec-group' }, [
-                h('label', { for: 'sec' }, 'Sec'),
-                h('div', { class: 'sec-stepper' }, [
+          ]),
+          rowsForDisplay.length
+            ? h('section', { class: 'table-wrap' }, [
+                h('table', null, [
+                  h('thead', null, [
+                    h('tr', null, [
+                      h('th', null, 'Distance'),
+                      ...paceColumns.map((col, colIndex) =>
+                        h('th', { key: `pace-col-${colIndex}` }, [
+                          h('div', { class: `pace-col${col.delta === 0 ? ' base' : ''}` }, [
+                            h('small', null, col.paceText),
+                          ]),
+                        ]),
+                      ),
+                    ]),
+                  ]),
                   h(
-                    'button',
-                    {
-                      type: 'button',
-                      'aria-label': 'Decrease seconds',
-                      onClick: () =>
-                        setPace((current) => normalizePace(current.min, current.sec - 1)),
-                    },
-                    '-',
-                  ),
-                  h('input', {
-                    id: 'sec',
-                    type: 'number',
-                    inputMode: 'numeric',
-                    value: pace.sec,
-                    onInput: (e) =>
-                      setPace((current) => normalizePace(current.min, e.currentTarget.value)),
-                  }),
-                  h(
-                    'button',
-                    {
-                      type: 'button',
-                      'aria-label': 'Increase seconds',
-                      onClick: () =>
-                        setPace((current) => normalizePace(current.min, current.sec + 1)),
-                    },
-                    '+',
+                    'tbody',
+                    null,
+                    rowsForDisplay.flatMap((row) => {
+                      const eventRow = h('tr', { key: row.key }, [
+                        h('td', { 'data-label': 'Distance' }, [
+                          h('div', { class: 'distance' }, [
+                            h('strong', null, row.label),
+                            h('span', null, `${row.km.toFixed(3).replace(/\.?0+$/, '')} km`),
+                          ]),
+                        ]),
+                        ...row.times.map((time, idx) =>
+                          h(
+                            'td',
+                            {
+                              key: `${row.key}-${idx}`,
+                              class: paceColumns[idx].delta === 0 ? 'base-cell' : '',
+                              'data-label': paceColumns[idx].paceText,
+                            },
+                            time,
+                          ),
+                        ),
+                      ]);
+
+                      if (!showSplitRows) {
+                        return [eventRow];
+                      }
+
+                      const currentEventIndex = EVENTS.findIndex((event) => event.key === row.key);
+                      const nextEventKm = EVENTS[currentEventIndex + 1]?.km;
+                      if (!nextEventKm) {
+                        return [eventRow];
+                      }
+
+                      const splitRows = splitRowsFor(row.km, nextEventKm).map((split, splitIndex) =>
+                        h(
+                          'tr',
+                          { key: `${row.key}-split-${splitIndex}`, class: 'checkpoint-row' },
+                          [
+                            h('td', { 'data-label': 'Split' }, [
+                              h('div', { class: 'checkpoint-label' }, [h('b', null, split.label)]),
+                            ]),
+                            ...split.times.map((time, timeIndex) =>
+                              h(
+                                'td',
+                                {
+                                  key: `${row.key}-split-${splitIndex}-${timeIndex}`,
+                                  class: paceColumns[timeIndex].delta === 0 ? 'base-cell' : '',
+                                  'data-label': paceColumns[timeIndex].paceText,
+                                },
+                                time,
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+
+                      return [eventRow, ...splitRows];
+                    }),
                   ),
                 ]),
-              ]),
-              h('div', { class: 'group unit-group' }, [
-                h('label', { for: 'unit' }, 'Pace Unit'),
+              ])
+            : h('section', { class: 'table-wrap' }, [
                 h(
-                  'select',
-                  {
-                    id: 'unit',
-                    value: unit,
-                    onChange: (e) => {
-                      const nextUnit = e.currentTarget.value;
-                      if (nextUnit === unit) return;
-
-                      const currentSecPerUnit = pace.min * 60 + pace.sec;
-                      const convertedSecPerUnit =
-                        unit === 'km' && nextUnit === 'mi'
-                          ? currentSecPerUnit / KM_TO_MILE
-                          : currentSecPerUnit * KM_TO_MILE;
-
-                      setPace(normalizePace(0, Math.round(convertedSecPerUnit)));
-                      setUnit(nextUnit);
-                    },
-                  },
-                  [
-                    h('option', { value: 'km' }, 'per kilometer'),
-                    h('option', { value: 'mi' }, 'per mile'),
-                  ],
+                  'div',
+                  { class: 'mobile-empty' },
+                  'Type an event (for example 5k or 100k) to show pace results.',
                 ),
               ]),
-              h('div', { class: 'group options-group' }, [
-                h('label', null, 'Options'),
-                h('label', { class: 'toggle' }, [
-                  h('input', {
-                    type: 'checkbox',
-                    checked: showSplits,
-                    onChange: (e) => setShowSplits(e.currentTarget.checked),
-                  }),
-                  'Show splits',
-                ]),
-              ]),
-            ]),
-          ]),
-          h('section', { class: 'table-wrap' }, [
-            h('table', null, [
-              h('thead', null, [
-                h('tr', null, [
-                  h('th', null, 'Distance'),
-                  ...paceColumns.map((col, colIndex) =>
-                    h('th', { key: `pace-col-${colIndex}` }, [
-                      h('div', { class: `pace-col${col.delta === 0 ? ' base' : ''}` }, [
-                        h('small', null, col.paceText),
-                      ]),
-                    ]),
-                  ),
-                ]),
-              ]),
-              h(
-                'tbody',
-                null,
-                visibleRows.flatMap((row) => {
-                  const eventRow = h('tr', { key: row.key }, [
-                    h('td', { 'data-label': 'Distance' }, [
-                      h('div', { class: 'distance' }, [
-                        h('strong', null, row.label),
-                        h('span', null, `${row.km.toFixed(3).replace(/\.?0+$/, '')} km`),
-                      ]),
-                    ]),
-                    ...row.times.map((time, idx) =>
-                      h(
-                        'td',
-                        {
-                          key: `${row.key}-${idx}`,
-                          class: paceColumns[idx].delta === 0 ? 'base-cell' : '',
-                          'data-label': paceColumns[idx].paceText,
-                        },
-                        time,
-                      ),
-                    ),
-                  ]);
-
-                  if (!effectiveShowSplits) {
-                    return [eventRow];
-                  }
-
-                  const currentEventIndex = EVENTS.findIndex((event) => event.key === row.key);
-                  const nextEventKm = EVENTS[currentEventIndex + 1]?.km;
-                  if (!nextEventKm) {
-                    return [eventRow];
-                  }
-
-                  const splitRows = splitRowsFor(row.km, nextEventKm).map((split, splitIndex) =>
-                    h('tr', { key: `${row.key}-split-${splitIndex}`, class: 'checkpoint-row' }, [
-                      h('td', { 'data-label': 'Split' }, [
-                        h('div', { class: 'checkpoint-label' }, [h('b', null, split.label)]),
-                      ]),
-                      ...split.times.map((time, timeIndex) =>
-                        h(
-                          'td',
-                          {
-                            key: `${row.key}-split-${splitIndex}-${timeIndex}`,
-                            class: paceColumns[timeIndex].delta === 0 ? 'base-cell' : '',
-                            'data-label': paceColumns[timeIndex].paceText,
-                          },
-                          time,
-                        ),
-                      ),
-                    ]),
-                  );
-
-                  return [eventRow, ...splitRows];
-                }),
-              ),
-            ]),
-          ]),
         ]);
       }
 
