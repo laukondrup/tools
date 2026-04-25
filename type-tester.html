@@ -1,0 +1,249 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Center Key Type Tester</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --bg: #f1f5f2;
+        --panel: #ffffff;
+        --panel-2: #f8faf8;
+        --ink: #111914;
+        --muted: #5b6b61;
+        --line: #d7e1da;
+        --accent: #186a3b;
+        --accent-2: #e3f2e8;
+        --warn: #9f1f1f;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        color: var(--ink);
+        font-family: "Manrope", "Segoe UI", sans-serif;
+        background:
+          radial-gradient(circle at 8% 12%, #ffffff 0%, transparent 34%),
+          radial-gradient(circle at 92% 88%, #e5efe8 0%, transparent 38%),
+          var(--bg);
+      }
+
+      .app-shell {
+        width: min(960px, calc(100vw - 2rem));
+        margin: 1.25rem auto 2.25rem;
+        border: 1px solid var(--line);
+        background: color-mix(in srgb, var(--panel) 96%, white 4%);
+        box-shadow: 0 20px 45px rgba(19, 34, 23, 0.08);
+      }
+
+      .top {
+        padding: 1.2rem 1.2rem 1rem;
+        border-bottom: 1px solid var(--line);
+        background: linear-gradient(135deg, #ffffff 0%, #f4faf5 100%);
+      }
+
+      .title {
+        margin: 0;
+        font-size: clamp(1.5rem, 4vw, 2.2rem);
+        line-height: 1.05;
+        font-weight: 800;
+      }
+
+      .subtitle {
+        margin-top: 0.45rem;
+        color: var(--muted);
+        font-size: 0.94rem;
+      }
+
+      .focus-letters {
+        display: inline-flex;
+        gap: 0.42rem;
+        margin-top: 0.85rem;
+        flex-wrap: wrap;
+      }
+
+      .focus-pill {
+        border: 1px solid #9ec8ad;
+        padding: 0.28rem 0.5rem;
+        font: 700 0.78rem/1 "IBM Plex Mono", monospace;
+        background: var(--accent-2);
+      }
+
+      .body {
+        padding: 1.1rem;
+        display: grid;
+        gap: 1rem;
+      }
+
+      .panel {
+        border: 1px solid var(--line);
+        background: var(--panel-2);
+      }
+
+      .stats {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+
+      .stat {
+        padding: 0.8rem 0.75rem;
+        border-right: 1px solid var(--line);
+      }
+
+      .stat:nth-child(3n) {
+        border-right: none;
+      }
+
+      .label {
+        color: var(--muted);
+        font: 700 0.72rem/1 "IBM Plex Mono", monospace;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+      }
+
+      .value {
+        margin-top: 0.32rem;
+        font: 700 1.12rem/1.1 "IBM Plex Mono", monospace;
+      }
+
+      .typing-area {
+        padding: 0.95rem;
+      }
+
+      .passage {
+        min-height: 190px;
+        border: 1px solid var(--line);
+        padding: 0.9rem;
+        background: #ffffff;
+        color: #3c4a42;
+        font: 500 1.05rem/1.65 "IBM Plex Mono", monospace;
+        white-space: pre-wrap;
+        word-break: break-word;
+      }
+
+      .char.correct {
+        color: #132219;
+      }
+
+      .char.current {
+        background: #d6efdf;
+        color: #0f3c22;
+      }
+
+      .char.pending {
+        color: #718277;
+      }
+
+      .controls {
+        margin-top: 0.95rem;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.62rem;
+      }
+
+      button {
+        appearance: none;
+        border: 1px solid #2b6c45;
+        background: #1e7a49;
+        color: #fff;
+        padding: 0.6rem 0.8rem;
+        border-radius: 0;
+        font: 700 0.88rem/1 "IBM Plex Mono", monospace;
+        cursor: pointer;
+      }
+
+      button.secondary {
+        border-color: #416f54;
+        background: #f4fbf6;
+        color: #1f4f35;
+      }
+
+      button.warn {
+        border-color: #7e2828;
+        background: #fff1f1;
+        color: #7e1414;
+      }
+
+      button:disabled {
+        opacity: 0.45;
+        cursor: not-allowed;
+      }
+
+      .hint {
+        margin-top: 0.7rem;
+        color: var(--muted);
+        font: 500 0.8rem/1.4 "IBM Plex Mono", monospace;
+      }
+
+      .status {
+        border: 1px solid var(--line);
+        padding: 0.7rem;
+        background: #ffffff;
+        color: var(--muted);
+        font: 500 0.84rem/1.35 "IBM Plex Mono", monospace;
+      }
+
+      .error {
+        color: var(--warn);
+      }
+
+      .history {
+        padding: 0.9rem;
+      }
+
+      .history h2 {
+        margin: 0 0 0.6rem;
+        font-size: 0.95rem;
+      }
+
+      .history-list {
+        margin: 0;
+        padding: 0;
+        list-style: none;
+        display: grid;
+        gap: 0.35rem;
+      }
+
+      .history-list li {
+        border: 1px solid var(--line);
+        padding: 0.45rem 0.52rem;
+        background: #fff;
+        font: 500 0.8rem/1.35 "IBM Plex Mono", monospace;
+        color: #345442;
+      }
+
+      @media (max-width: 700px) {
+        .stats {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .stat:nth-child(2n) {
+          border-right: none;
+        }
+
+        .passage {
+          min-height: 220px;
+          font-size: 1rem;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main id="app" class="app-shell"></main>
+    <script src="https://unpkg.com/preact@10.26.4/dist/preact.umd.js"></script>
+    <script src="https://unpkg.com/preact@10.26.4/hooks/dist/hooks.umd.js"></script>
+    <script src="https://unpkg.com/htm@3.1.1/dist/htm.umd.js"></script>
+    <script src="./quotes-data.js"></script>
+    <script src="./type-tester.js"></script>
+  </body>
+</html>
